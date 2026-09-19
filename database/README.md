@@ -23,7 +23,9 @@ Ginamit na natin ang **`paytrack.sql`** na naglalaman ng parehong schema (tables
 
 ## 🔑 Default Login Accounts
 
-Pagkatapos i-import ang database, maaari nang gamitin ang mga sumusunod na account sa login page (`http://localhost/SystemProposal/public/login.php`):
+Pagkatapos i-import ang database, buksan ang login page sa browser:
+`http://localhost/<folder-name>/public/`  
+*(Halimbawa kung pinangalanang `paytrack` ang folder: `http://localhost/paytrack/public/`, o kung `SystemProposal`: `http://localhost/SystemProposal/public/`)*
 
 ### 1. Administrator Account
 - **Username / Role:** `admin`

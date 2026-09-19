@@ -8,7 +8,31 @@
 //  Application
 // ------------------------------------------------------------
 define('APP_NAME',    'Paytrack');
-define('APP_URL',     'http://localhost/SystemProposal');
+
+// Auto-detect APP_URL dynamically so assets and links work regardless of folder name
+if (!defined('APP_URL')) {
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $host     = $_SERVER['HTTP_HOST'];
+        $basePath = '';
+        if (!empty($_SERVER['SCRIPT_NAME'])) {
+            $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+            if (preg_match('#^(.*?)/public(?:/|$)#', $script, $m)) {
+                $basePath = $m[1];
+            } else {
+                $docRoot  = !empty($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'])) : '';
+                $projRoot = str_replace('\\', '/', realpath(dirname(__DIR__)));
+                if ($docRoot && strpos($projRoot, $docRoot) === 0) {
+                    $basePath = substr($projRoot, strlen($docRoot));
+                }
+            }
+        }
+        define('APP_URL', rtrim($protocol . $host . $basePath, '/'));
+    } else {
+        define('APP_URL', 'http://localhost/' . basename(dirname(__DIR__)));
+    }
+}
+
 define('APP_VERSION', '1.0.0');
 
 // ------------------------------------------------------------
