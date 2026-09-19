@@ -1,0 +1,14 @@
+{
+    "name": "school/tuition-payment-system",
+    "description": "Student Tuition Fee Payment Portal",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "."
+        }
+    }
+}

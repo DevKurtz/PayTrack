@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payments</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="stage">
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="org">
+      <div class="org-icon">A</div>
+      <div class="org-text">
+        <div class="org-name">Paytrack</div>
+        <div class="org-team">Arche</div>
+      </div>
+      <div class="org-caret">▾</div>
+    </div>
+
+    <ul class="nav">
+      <li class="nav-item"><span class="ic">⌂</span> Home</li>
+      <li class="nav-item active"><span class="ic">▥</span>Transactions<span class="chev">▾</span></li>
+    </ul>
+    <ul class="sub-nav">
+      <li class="current">Recipients</li>
+    </ul>
+    <ul class="nav">
+      <li class="nav-item"><span class="ic">▭</span> Cards</li>
+      <li class="nav-item"><span class="ic">🏛</span> Account <span class="chev">▾</span></li>
+    </ul>
+
+    <div class="section-label">Workflows</div>
+    <ul class="nav">
+      <li class="nav-item"><span class="ic">▤</span> Bill Pay</li>
+      <li class="nav-item"><span class="ic">▤</span> Invoicing <span class="chev">▾</span></li>
+      <li class="nav-item"><span class="ic">▤</span> Accounting</li>
+    </ul>
+
+    <div class="promo">
+      <div class="promo-badge"><span class="coin">🪙</span> GlobalLink</div>
+      <p>Accept credit cards and bank payment</p>
+      <button>Set up now</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="search">🔍 Search... <span class="kbd">⌘ K</span></div>
+      <div class="avatar"></div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1>Payments</h1>
+          <p>Manage your accounts and balances</p>
+        </div>
+        <div class="head-actions">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="tabs">
+          <div class="tab active">Inbox</div>
+          <div class="tabs-right">
+            <div class="mail-chip"><span class="ic">✉</span>arche@gmail.com</div>
+          </div>
+        </div>
+
+        <div class="inbox-head">
+          <h3>Inbox</h3>
+          <div class="status-filter">Status ▾</div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:30px;"><span class="chk"></span></th>
+              <th>Due date</th>
+              <th>Status</th>
+              <th>Recipient</th>
+              <th>Amount</th>
+              <th>Invoice no</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const rows = [
+  {date:"Oct 28-2026", status:"Completed", amount:"₱2,000.00", invoice:"9870543456"},
+];
+
+function badgeClass(status){
+  if(status === "Completed") return "completed";
+  if(status === "Overdue") return "overdue";
+  return "notdue";
+}
+
+const tbody = document.getElementById("rows");
+rows.forEach(r=>{
+  const tr = document.createElement("tr");
+
+  tr.innerHTML = `
+    <td><span class="chk"></span></td>
+    <td>${r.date}</td>
+    <td><span class="badge ${badgeClass(r.status)}">${r.status}</span></td>
+    <td>
+      <div class="recipient">
+        <div class="rec-ic">▭</div>
+        Tuiton Payment
+      </div>
+    </td>
+    <td>${r.amount}</td>
+    <td>${r.invoice}</td>
+    <td class="last-update">2026-08-12<br>11:00 AM</td>
+  `;
+
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>

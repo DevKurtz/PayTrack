@@ -1,0 +1,7 @@
+﻿Options -Indexes
+
+# Block direct access to sensitive directories
+RewriteEngine On
+RewriteRule ^(config|core|controllers|models|mail|database|vendor)/ - [F,L]
+
+# Redirect all requests through public/index.php (optional)
