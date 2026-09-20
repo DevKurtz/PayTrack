@@ -14,6 +14,7 @@ class StudentController
     public static function payTuition(): void
     {
         Auth::requireRole('student');
+        verify_csrf();
 
         $userId = Auth::userId();
         $student = Student::findByUserId($userId);
@@ -21,7 +22,9 @@ class StudentController
 
         $feeId = (int) ($_POST['fee_id'] ?? 0);
         $amount = (float) ($_POST['amount'] ?? 0);
-        $method = trim($_POST['payment_method'] ?? 'online');
+        $rawMethod = trim($_POST['payment_method'] ?? 'online');
+        $allowedMethods = ['online', 'gcash', 'maya', 'bank_transfer', 'card'];
+        $method = in_array($rawMethod, $allowedMethods) ? $rawMethod : 'online';
 
         if ($feeId <= 0 || $amount <= 0) {
             Auth::setFlash('error', 'Please enter a valid payment amount.');
@@ -91,6 +94,8 @@ class StudentController
     public static function updatePassword(): void
     {
         Auth::requireRole('student');
+        verify_csrf();
+
         $newPassword = $_POST['new_password'] ?? '';
         if (strlen($newPassword) < 6) {
             Auth::setFlash('error', 'Password must be at least 6 characters.');

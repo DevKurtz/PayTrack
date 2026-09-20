@@ -20,32 +20,40 @@ class AdminController
         $studentId     = trim($_POST['student_id'] ?? '');
         $firstName     = trim($_POST['first_name'] ?? '');
         $lastName      = trim($_POST['last_name'] ?? '');
-        $parentName    = trim($_POST['parent_name'] ?? '');
+        $parentName    = trim(strip_tags($_POST['parent_name'] ?? ''));
         $parentEmail   = trim($_POST['parent_email'] ?? '');
         $studentEmail  = trim($_POST['student_email'] ?? '');
-        $parentContact = trim($_POST['parent_contact'] ?? '');
+        $parentContact = trim(preg_replace('/[^0-9+\-\s\(\)]/', '', $_POST['parent_contact'] ?? ''));
 
         // Course & Section Code
         $allowedCourses = ['BSCS', 'BSIT', 'BSEE', 'BSHM', 'BSIE', 'BSCrim'];
         $course        = trim($_POST['course'] ?? 'BSCS');
         $sectionCode   = trim($_POST['section_code'] ?? '11A1');
-        $classGrade    = trim($_POST['class_grade'] ?? '');
 
         if (!in_array($course, $allowedCourses)) {
             $course = 'BSCS';
         }
-
-        if (!empty($course) && !empty($sectionCode)) {
-            $classGrade = "{$course} {$sectionCode}";
-        } elseif (empty($classGrade)) {
-            $classGrade = 'BSCS 11A1';
+        if (!preg_match('/^[1-4][1-2][MAE][1-3]$/', $sectionCode)) {
+            $sectionCode = '11A1';
         }
+
+        $classGrade = "{$course} {$sectionCode}";
 
         // Tuition Fee Assessment Fields
         $totalTuition  = (float) ($_POST['total_tuition'] ?? 0);
         $schoolYear    = trim($_POST['school_year'] ?? (date('Y') . '-' . (date('Y') + 1)));
         $semester      = trim($_POST['semester'] ?? '1st Semester');
         $dueDate       = trim($_POST['due_date'] ?? date('Y-m-d', strtotime('+30 days')));
+
+        if (!in_array($semester, ['1st Semester', '2nd Semester', 'Summer'])) {
+            $semester = '1st Semester';
+        }
+        if (!preg_match('/^\d{4}-\d{4}$/', $schoolYear)) {
+            $schoolYear = date('Y') . '-' . (date('Y') + 1);
+        }
+        if (!empty($dueDate) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+            $dueDate = date('Y-m-d', strtotime('+30 days'));
+        }
 
         // Validations
         if (!preg_match('/^\d{4}-\d{5}$/', $studentId)) {
@@ -163,6 +171,16 @@ class AdminController
         $semester     = trim($_POST['semester'] ?? '1st Semester');
         $dueDate      = trim($_POST['due_date'] ?? '');
 
+        if (!in_array($semester, ['1st Semester', '2nd Semester', 'Summer'])) {
+            $semester = '1st Semester';
+        }
+        if (!preg_match('/^\d{4}-\d{4}$/', $schoolYear)) {
+            $schoolYear = date('Y') . '-' . (date('Y') + 1);
+        }
+        if (!empty($dueDate) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+            $dueDate = date('Y-m-d', strtotime('+30 days'));
+        }
+
         $fixedSum = FeeCategory::getFixedTotal();
         if ($studentId <= 0 || $totalAmount < $fixedSum) {
             Auth::setFlash('error', 'Please provide a valid tuition amount of at least ' . peso($fixedSum) . '.');
@@ -180,7 +198,7 @@ class AdminController
         verify_csrf();
 
         $id = (int) ($_POST['category_id'] ?? 0);
-        $name = trim($_POST['name'] ?? '');
+        $name = trim(strip_tags($_POST['name'] ?? ''));
         $defaultAmount = (float) ($_POST['default_amount'] ?? 0);
         $isVariable = !empty($_POST['is_variable']) ? 1 : 0;
         $sortOrder = (int) ($_POST['sort_order'] ?? 99);

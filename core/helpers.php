@@ -48,7 +48,11 @@ function defaultPassword(string $studentId, string $lastName): string
 function csrf_token(): string
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        if (class_exists('Auth')) {
+            Auth::start();
+        } else {
+            session_start();
+        }
     }
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -64,12 +68,16 @@ function csrf_field(): string
 function verify_csrf(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        if (class_exists('Auth')) {
+            Auth::start();
+        } else {
+            session_start();
+        }
     }
     $token = $_POST['csrf_token'] ?? '';
     if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
         http_response_code(403);
-        die("Security Validation Failed: Invalid CSRF Token.");
+        die("Security Validation Failed: Invalid CSRF Token. Please refresh the page and try again.");
     }
 }
 

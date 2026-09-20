@@ -51,6 +51,62 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             color: #94a3b8;
         }
 
+        /* ── Live Search Dropdown ── */
+        .search-live-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            min-width: 340px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+            z-index: 99999;
+            max-height: 380px;
+            overflow-y: auto;
+            padding: 6px 0;
+            text-align: left;
+        }
+        .search-dropdown-group-title {
+            font-size: 10.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #64748b;
+            padding: 8px 14px 4px;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+        .search-dropdown-group-title:first-child {
+            border-top: none;
+        }
+        .search-dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 12.5px;
+            color: #0f172a;
+            transition: background 0.12s ease;
+            text-decoration: none;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .search-dropdown-item:hover {
+            background: #eff6ff;
+        }
+        .search-dropdown-item .item-meta {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .search-dropdown-empty {
+            padding: 16px 14px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+        }
+
         .notif-bell-btn {
             position: relative;
             background: none;
@@ -714,12 +770,13 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             <button class="mobile-menu-btn" id="btnOpenSidebar" aria-label="Toggle Navigation">&#9776;</button>
 
             <!-- Search Bar -->
-            <div class="search-container">
+            <div class="search-container" style="position: relative;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" id="studentSearchInput" placeholder="Search my records...">
+                <input type="text" id="studentSearchInput" placeholder="Search my records (OR#, fee, amount)..." autocomplete="off" value="<?= e($_GET['q'] ?? '') ?>">
+                <div id="studentSearchDropdown" class="search-live-dropdown" style="display: none;"></div>
             </div>
 
             <!-- Topbar Right Profile & Notif Actions -->
@@ -1375,7 +1432,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                     <?php else: ?>
                         <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
                             <?php foreach ($payments as $p): ?>
-                                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: all 0.2s ease;">
+                                <div class="receipt-card-item" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: all 0.2s ease;">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
                                         <div>
                                             <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Official Receipt No.</div>
@@ -1441,6 +1498,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
 
                 <div class="card-box" style="max-width: 480px;">
                     <form method="POST" action="<?= APP_URL ?>/public/student/?view=password">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action" value="change_password">
 
                         <div class="form-group" style="margin-bottom: 16px;">
@@ -1476,6 +1534,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         <h2 class="modal-header-title">Pay Tuition Fee</h2>
 
         <form method="POST" action="<?= APP_URL ?>/public/student/?view=<?= e($currentView) ?>" id="paymentForm">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="pay_tuition">
             <input type="hidden" name="fee_id" id="modalFeeId">
 
@@ -1852,18 +1911,194 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         });
     <?php endif; ?>
 
-    // Search filter for tables
+    // ── Global Search & Live Autocomplete System (Student Portal) ──
+    const STUDENT_PROFILE = {
+        name: <?= json_encode($studentName) ?>,
+        student_id: <?= json_encode($studentNum) ?>,
+        section: <?= json_encode($student['grade_level'] ?? 'BSCS 11A1') ?>,
+        balance: <?= json_encode(peso($totalRemaining)) ?>
+    };
+
+    const STUDENT_PAYMENTS = <?= json_encode(array_map(function($p) {
+        return [
+            'or_number' => $p['or_number'],
+            'amount' => peso((float)$p['amount']),
+            'raw_amount' => (float)$p['amount'],
+            'fee_desc' => $p['fee_desc'],
+            'method' => strtoupper($p['payment_method']),
+            'date' => date('M d, Y h:i A', strtotime($p['paid_at']))
+        ];
+    }, $payments), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+    const STUDENT_BREAKDOWN = <?= json_encode(array_map(function($b) {
+        return [
+            'name' => $b['category_name'],
+            'amount' => peso((float)$b['amount'])
+        ];
+    }, $breakdownItems ?? []), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
     const studentSearchInput = document.getElementById('studentSearchInput');
-    if (studentSearchInput) {
-        studentSearchInput.addEventListener('keyup', function() {
-            const query = this.value.toLowerCase();
-            const rows = document.querySelectorAll('table tbody tr');
-            rows.forEach(r => {
-                const text = r.textContent.toLowerCase();
-                r.style.display = text.includes(query) ? '' : 'none';
-            });
+    const studentSearchDropdown = document.getElementById('studentSearchDropdown');
+
+    function filterCurrentStudentView(query) {
+        const q = (query || '').toLowerCase().trim();
+
+        // 1. Filter Table Rows
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(r => {
+            if (r.children.length === 1 && r.children[0].hasAttribute('colspan')) return;
+            const text = r.textContent.toLowerCase();
+            // Also match if user searched their own name or ID on home view
+            const matchesStudent = STUDENT_PROFILE.name.toLowerCase().includes(q) || STUDENT_PROFILE.student_id.toLowerCase().includes(q);
+            r.style.display = (text.includes(q) || (matchesStudent && q.length >= 3)) ? '' : 'none';
+        });
+
+        // 2. Filter Receipt Cards (on ?view=receipts)
+        const cards = document.querySelectorAll('.receipt-card-item');
+        cards.forEach(c => {
+            const text = c.textContent.toLowerCase();
+            c.style.display = text.includes(q) ? '' : 'none';
         });
     }
+
+    function renderStudentSearchDropdown(query) {
+        if (!studentSearchDropdown) return;
+        if (!query || query.trim().length === 0) {
+            studentSearchDropdown.style.display = 'none';
+            studentSearchDropdown.innerHTML = '';
+            return;
+        }
+
+        const q = query.trim().toLowerCase();
+        let html = '';
+        let matchCount = 0;
+
+        // 1. Match Student Account Profile (e.g. "Dela Cruz", "2023", "BSCS")
+        const nameMatches = STUDENT_PROFILE.name.toLowerCase().includes(q);
+        const idMatches = STUDENT_PROFILE.student_id.toLowerCase().includes(q);
+        const secMatches = STUDENT_PROFILE.section.toLowerCase().includes(q);
+
+        if (nameMatches || idMatches || secMatches) {
+            matchCount++;
+            html += `<div class="search-dropdown-group-title">Student Profile</div>`;
+            html += `
+                <div class="search-dropdown-item" style="cursor: default; background: #f0fdf4;">
+                    <div>
+                        <strong style="color: #166534;">👤 ${escapeHtml(STUDENT_PROFILE.name)}</strong>
+                        <span class="item-meta"> &bull; ID: <code>${escapeHtml(STUDENT_PROFILE.student_id)}</code> &bull; ${escapeHtml(STUDENT_PROFILE.section)}</span>
+                    </div>
+                    <div style="font-weight: 700; font-size: 11px; color: #166534;">
+                        Remaining: ${escapeHtml(STUDENT_PROFILE.balance)}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. Match Official Receipts
+        const matchedPayments = STUDENT_PAYMENTS.filter(p => {
+            return p.or_number.toLowerCase().includes(q) ||
+                   p.fee_desc.toLowerCase().includes(q) ||
+                   p.method.toLowerCase().includes(q) ||
+                   p.amount.toLowerCase().includes(q) ||
+                   p.date.toLowerCase().includes(q);
+        }).slice(0, 4);
+
+        if (matchedPayments.length > 0) {
+            matchCount += matchedPayments.length;
+            html += `<div class="search-dropdown-group-title">Official Receipts (${matchedPayments.length})</div>`;
+            matchedPayments.forEach(p => {
+                html += `
+                    <div class="search-dropdown-item" onclick="openOfficialReceiptModal('${escapeHtml(p.or_number)}', '${escapeHtml(p.amount)}', '${escapeHtml(p.date)}', '${escapeHtml(p.method)}', '${escapeHtml(p.fee_desc)}', '${escapeHtml(STUDENT_PROFILE.name)}', '${escapeHtml(STUDENT_PROFILE.student_id)}', '${escapeHtml(STUDENT_PROFILE.section)}')">
+                        <div>
+                            <strong style="font-family: monospace; color: #0b3d2e;">🧾 ${escapeHtml(p.or_number)}</strong>
+                            <span class="item-meta"> &bull; ${escapeHtml(p.method)} &bull; ${escapeHtml(p.date)}</span>
+                        </div>
+                        <div style="font-weight: 800; font-size: 12px; color: #059669;">
+                            ${escapeHtml(p.amount)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 3. Match Fee Aspects Breakdown
+        const matchedAspects = STUDENT_BREAKDOWN.filter(b => {
+            return b.name.toLowerCase().includes(q) || b.amount.toLowerCase().includes(q);
+        }).slice(0, 4);
+
+        if (matchedAspects.length > 0) {
+            matchCount += matchedAspects.length;
+            html += `<div class="search-dropdown-group-title">Tuition Fee Aspects (${matchedAspects.length})</div>`;
+            matchedAspects.forEach(b => {
+                html += `
+                    <a href="<?= APP_URL ?>/public/student/?view=fees" class="search-dropdown-item">
+                        <div>
+                            <strong style="color: #0f172a;">💳 ${escapeHtml(b.name)}</strong>
+                        </div>
+                        <div style="font-weight: 700; font-size: 12px; color: #2563eb;">
+                            ${escapeHtml(b.amount)}
+                        </div>
+                    </a>
+                `;
+            });
+        }
+
+        if (matchCount === 0) {
+            studentSearchDropdown.innerHTML = `
+                <div class="search-dropdown-empty">
+                    No matching records found for "<strong>${escapeHtml(query)}</strong>".<br>
+                    <small style="color: #94a3b8; margin-top: 4px; display: inline-block;">Try searching for OR#, fee aspect, amount, or date</small>
+                </div>
+            `;
+            studentSearchDropdown.style.display = 'block';
+            return;
+        }
+
+        studentSearchDropdown.innerHTML = html;
+        studentSearchDropdown.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[m];
+        });
+    }
+
+    if (studentSearchInput) {
+        studentSearchInput.addEventListener('input', function() {
+            const query = this.value;
+            filterCurrentStudentView(query);
+            renderStudentSearchDropdown(query);
+        });
+
+        studentSearchInput.addEventListener('focus', function() {
+            if (this.value.trim().length > 0) {
+                renderStudentSearchDropdown(this.value);
+            }
+        });
+
+        studentSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (studentSearchDropdown) studentSearchDropdown.style.display = 'none';
+            }
+        });
+
+        // Pre-fill search if ?q= is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialQuery = urlParams.get('q');
+        if (initialQuery && initialQuery.trim().length > 0) {
+            studentSearchInput.value = initialQuery;
+            filterCurrentStudentView(initialQuery);
+        }
+    }
+
+    // Close search dropdown on click outside
+    document.addEventListener('click', function(e) {
+        if (studentSearchDropdown && !studentSearchDropdown.contains(e.target) && e.target !== studentSearchInput) {
+            studentSearchDropdown.style.display = 'none';
+        }
+    });
 </script>
 
 </body>

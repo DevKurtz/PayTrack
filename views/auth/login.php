@@ -368,6 +368,7 @@
             </div>
 
             <form method="POST" action="<?= APP_URL ?>/public/" id="loginForm">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="login">
                 <input type="hidden" name="role" id="loginRoleInput" value="student">
 

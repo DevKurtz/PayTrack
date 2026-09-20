@@ -10,6 +10,8 @@ class AuthController
 {
     public static function login(): void
     {
+        verify_csrf();
+
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
         $role     = trim($_POST['role'] ?? '');
@@ -72,9 +74,11 @@ class AuthController
         session_regenerate_id(true);
 
         // Set session
-        $_SESSION['user_id']  = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role']     = $user['role'];
+        $_SESSION['user_id']       = $user['id'];
+        $_SESSION['username']      = $user['username'];
+        $_SESSION['role']          = $user['role'];
+        $_SESSION['last_activity'] = time();
+        $_SESSION['user_agent']    = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
         // Redirect
         if ($user['role'] === 'admin') {

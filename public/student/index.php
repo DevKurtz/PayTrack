@@ -42,6 +42,14 @@ $totalRemaining = max(0, $totalFees - $totalPaid);
 // Fetch Student Payments History
 $payments = $student ? Payment::getByStudentId($student['id']) : [];
 
+// Flatten fee items across all tuition records for search breakdown
+$breakdownItems = [];
+foreach ($fees as $f) {
+    foreach ($f['items'] ?? [] as $item) {
+        $breakdownItems[] = $item;
+    }
+}
+
 $paymentSuccess = Auth::getFlash('payment_success');
 $successMsg = Auth::getFlash('success');
 $errorMsg = Auth::getFlash('error');

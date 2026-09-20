@@ -22,6 +22,24 @@ class Auth
             session_name(SESSION_NAME);
             session_start();
         }
+
+        // Security: Inactivity session timeout (1 hour = 3600 seconds)
+        if (self::isLoggedIn()) {
+            $now = time();
+            $maxIdle = 3600; // 60 minutes
+            if (isset($_SESSION['last_activity']) && ($now - $_SESSION['last_activity'] > $maxIdle)) {
+                self::logout();
+            }
+            $_SESSION['last_activity'] = $now;
+
+            // Security: Soft User-Agent check to mitigate session hijacking
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            if (!isset($_SESSION['user_agent'])) {
+                $_SESSION['user_agent'] = $userAgent;
+            } elseif ($_SESSION['user_agent'] !== $userAgent) {
+                self::logout();
+            }
+        }
     }
 
     public static function isLoggedIn(): bool
@@ -77,6 +95,18 @@ class Auth
     {
         self::start();
         $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
+            );
+        }
         session_destroy();
         header('Location: ' . APP_URL . '/public/');
         exit;
