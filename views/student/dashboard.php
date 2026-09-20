@@ -576,6 +576,76 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             font-weight: 800;
             color: #0f172a;
         }
+
+        .btn-logout-prominent {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #fee2e2;
+            border: 1.5px solid #f87171;
+            border-radius: 8px;
+            color: #b91c1c;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-logout-prominent:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        /* ── Official Print Styling for National College of Science and Technology ── */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .sidebar, .topbar, .portal-header-row, .metrics-grid-3, .section-box,
+            .hero-dashboard-grid, .modal-backdrop:not(#officialReceiptModal),
+            .no-print, #sidebarOverlay, .notif-bell-btn, .search-container {
+                display: none !important;
+            }
+            #officialReceiptModal {
+                position: static !important;
+                display: block !important;
+                background: #ffffff !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                z-index: 999999 !important;
+            }
+            #officialReceiptModal .modal-window {
+                position: static !important;
+                transform: none !important;
+                box-shadow: none !important;
+                border: 2px solid #0b3d2e !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+            }
+            #ncstPrintableReceipt {
+                padding: 24px 30px !important;
+                background: #ffffff !important;
+            }
+            @page {
+                size: portrait;
+                margin: 10mm;
+            }
+        }
     </style>
 </head>
 <body>
@@ -597,13 +667,24 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
 
         <ul class="nav">
             <li>
+                <a href="<?= APP_URL ?>/public/student/?view=home" class="nav-item <?= $currentView === 'home' ? 'active' : '' ?>">
+                    <span class="ic">&#8962;</span> Home
+                </a>
+            </li>
+            <li>
                 <a href="<?= APP_URL ?>/public/student/?view=fees" class="nav-item <?= $currentView === 'fees' ? 'active' : '' ?>">
-                    <span class="ic">&#8962;</span> My Tuition &amp; Balance
+                    <span class="ic">&#128179;</span> My Tuition &amp; Balance
                 </a>
             </li>
             <li>
                 <a href="<?= APP_URL ?>/public/student/?view=history" class="nav-item <?= $currentView === 'history' ? 'active' : '' ?>">
                     <span class="ic">&#8644;</span> Payment History
+                    <span class="badge-count"><?= count($payments) ?></span>
+                </a>
+            </li>
+            <li>
+                <a href="<?= APP_URL ?>/public/student/?view=receipts" class="nav-item <?= $currentView === 'receipts' ? 'active' : '' ?>">
+                    <span class="ic">&#128196;</span> Official Receipts
                     <span class="badge-count"><?= count($payments) ?></span>
                 </a>
             </li>
@@ -614,9 +695,14 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             </li>
         </ul>
 
-        <div style="margin-top: auto; padding-top: 16px;">
-            <button type="button" class="btn" id="btnLogout" style="width: 100%; justify-content: center;">
-                &#8592; Logout
+        <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-logout-prominent" id="btnLogout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Sign Out / Logout</span>
             </button>
         </div>
     </aside>
@@ -646,17 +732,11 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                     <span class="notif-dot-red"></span>
                 </button>
 
-                <div class="user-chip-container">
-                    <div class="user-avatar-circle">
-                        <?= $studentInitial ?>
-                    </div>
+                <div class="user-chip-container" style="padding: 6px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <div class="user-chip-meta">
-                        <span class="user-chip-name"><?= e($studentName) ?></span>
-                        <span class="user-chip-id">(<?= e($studentNum) ?>)</span>
+                        <span class="user-chip-name" style="font-weight: 700; color: #0f172a;"><?= e($studentName) ?></span>
+                        <span class="user-chip-id" style="color: #64748b; font-size: 11.5px;">(<?= e($studentNum) ?>)</span>
                     </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" style="margin-left: 2px;">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
                 </div>
             </div>
         </header>
@@ -678,9 +758,172 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         <main class="content" style="padding: 24px 28px;">
 
             <!-- ============================================== -->
+            <!-- VIEW 0: STUDENT HOME / OVERVIEW               -->
+            <!-- ============================================== -->
+            <?php if ($currentView === 'home'): ?>
+                <div class="portal-header-row">
+                    <div class="portal-title-flex">
+                        <div class="wallet-icon-box" style="background: #e0f2fe; color: #0284c7;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="portal-page-title">Welcome back, <?= e($studentName) ?>!</h1>
+                            <p class="portal-page-sub">
+                                Student ID: <strong><?= e($studentNum) ?></strong> &bull; 
+                                Section: <strong><?= e($student['grade_level'] ?? 'BSCS 11A1') ?></strong> &bull; 
+                                School Year: <strong><?= e($student['school_year'] ?? (date('Y') . '-' . (date('Y') + 1))) ?></strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <?php if ($primaryFee && $totalRemaining > 0): ?>
+                        <button class="btn-pay-now-main" onclick="openPaymentModal(<?= $primaryFee['id'] ?>, '<?= e($termDescription) ?>', <?= $totalRemaining ?>)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            Pay Tuition Now &rarr;
+                        </button>
+                    <?php endif; ?>
+                </div>
+
+                <!-- 4 Quick Metric Summary Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Remaining Tuition Balance</div>
+                        <div style="font-size: 24px; font-weight: 800; color: <?= $totalRemaining > 0 ? '#dc2626' : '#059669' ?>;"><?= peso($totalRemaining) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                            <?= $totalRemaining > 0 ? 'Due for active semester' : 'Tuition fully settled' ?>
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Total Paid to Date</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #059669;"><?= peso($totalPaid) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                            <?= $calcPct ?>% of total assessment
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Account Billing Status</div>
+                        <div>
+                            <?php if ($totalRemaining <= 0): ?>
+                                <span class="pill-badge green" style="font-size: 12px; padding: 4px 12px;">Fully Paid &#10003;</span>
+                            <?php elseif ($totalPaid > 0): ?>
+                                <span class="pill-badge blue" style="font-size: 12px; padding: 4px 12px; background: #e0f2fe; color: #0369a1;">Partial (<?= $calcPct ?>%)</span>
+                            <?php else: ?>
+                                <span class="pill-badge red" style="font-size: 12px; padding: 4px 12px; background: #fee2e2; color: #b91c1c;">Unpaid Assessment</span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">Enrollment standing: Clear</div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Official Receipts</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #2563eb;"><?= count($payments) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                            <a href="<?= APP_URL ?>/public/student/?view=receipts" style="color: #2563eb; text-decoration: none; font-weight: 600;">View Official Receipts &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Section: Recent Receipts & Quick Shortcuts -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+                    <!-- Left: Recent Payments Log -->
+                    <div class="section-box" style="margin-bottom: 0;">
+                        <div class="section-box-header">
+                            <div class="section-header-left">
+                                <div class="section-header-icon">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </div>
+                                <h2 class="section-box-title">Recent Payment Transactions</h2>
+                            </div>
+                            <a href="<?= APP_URL ?>/public/student/?view=history" style="font-size: 12px; font-weight: 600; color: #2563eb; text-decoration: none;">View Ledger &rarr;</a>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="styled-fintech-table">
+                                <thead>
+                                    <tr>
+                                        <th>RECEIPT (OR#)</th>
+                                        <th>AMOUNT</th>
+                                        <th>METHOD</th>
+                                        <th>DATE</th>
+                                        <th style="text-align: right;">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $recentStudentPayments = array_slice($payments, 0, 3);
+                                    if (empty($recentStudentPayments)): 
+                                    ?>
+                                        <tr>
+                                            <td colspan="5" style="text-align: center; padding: 36px; color: #64748b;">
+                                                No payment transactions recorded yet. Click "Pay Tuition Now" to make a payment.
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($recentStudentPayments as $sp): ?>
+                                            <tr>
+                                                <td><code style="font-weight: 700; color: #0f172a;"><?= e($sp['or_number']) ?></code></td>
+                                                <td><strong style="color: #059669;"><?= peso((float)$sp['amount']) ?></strong></td>
+                                                <td><span class="badge-method-online"><?= strtoupper(e($sp['payment_method'])) ?></span></td>
+                                                <td style="color: #475569; font-size: 12px;"><?= date('M d, Y', strtotime($sp['paid_at'])) ?></td>
+                                                <td style="text-align: right;">
+                                                    <button class="btn-view-receipt-outline" onclick="openOfficialReceiptModal('<?= e($sp['or_number']) ?>', '<?= peso((float)$sp['amount']) ?>', '<?= date('M d, Y h:i A', strtotime($sp['paid_at'])) ?>', '<?= strtoupper(e($sp['payment_method'])) ?>', '<?= e($sp['fee_desc']) ?>', '<?= e($studentName) ?>', '<?= e($studentNum) ?>', '<?= e($student['grade_level'] ?? 'BSCS 11A1') ?>')">
+                                                        View OR
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Profile Info & Quick Actions -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Student Portal Shortcuts</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <a href="<?= APP_URL ?>/public/student/?view=fees" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>💳</span> My Tuition Breakdown &amp; Balance
+                                </a>
+                                <a href="<?= APP_URL ?>/public/student/?view=receipts" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>🧾</span> Official Receipts (OR) Directory
+                                </a>
+                                <a href="<?= APP_URL ?>/public/student/?view=history" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>📜</span> Complete Payment History Ledger
+                                </a>
+                                <a href="<?= APP_URL ?>/public/student/?view=password" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>🔑</span> Security &amp; Password Settings
+                                </a>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 16px;">
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: #0b3d2e; margin-bottom: 6px;">
+                                <span>📢</span> Student Advisory
+                            </div>
+                            <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0;">
+                                Electronic Official Receipts are automatically timestamped and verified. Keep your official receipts for exam clearance and enrollment validation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- ============================================== -->
             <!-- VIEW 1: MY TUITION & ASSESSMENT (FEES)         -->
             <!-- ============================================== -->
-            <?php if ($currentView === 'fees'): ?>
+            <?php elseif ($currentView === 'fees'): ?>
                 <!-- PAGE HEADER ROW -->
                 <div class="portal-header-row">
                     <div class="portal-title-flex">
@@ -1030,14 +1273,18 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                                             </td>
                                             <td><strong style="color: #059669; font-weight: 800; font-size: 13.5px;"><?= peso((float)$p['amount']) ?></strong></td>
                                             <td style="color: #475569; font-size: 12.5px;"><?= date('M d, Y h:i A', strtotime($p['paid_at'])) ?></td>
-                                            <td style="text-align: right;">
-                                                <button class="btn-view-receipt-outline" onclick="viewReceiptSummary('<?= e($p['or_number']) ?>', '<?= peso((float)$p['amount']) ?>', '<?= date('M d, Y h:i A', strtotime($p['paid_at'])) ?>', '<?= strtoupper(e($p['payment_method'])) ?>', '<?= e($p['fee_desc']) ?>')">
+                                            <td style="text-align: right; white-space: nowrap;">
+                                                <button class="btn-view-receipt-outline" onclick="openOfficialReceiptModal('<?= e($p['or_number']) ?>', '<?= peso((float)$p['amount']) ?>', '<?= date('M d, Y h:i A', strtotime($p['paid_at'])) ?>', '<?= strtoupper(e($p['payment_method'])) ?>', '<?= e($p['fee_desc']) ?>', '<?= e($studentName) ?>', '<?= e($studentNum) ?>', '<?= e($student['grade_level'] ?? 'BSCS 11A1') ?>')">
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                         <circle cx="12" cy="12" r="3"></circle>
                                                     </svg>
-                                                    View Receipt
+                                                    View OR
                                                 </button>
+                                                <a href="<?= APP_URL ?>/public/student/?view=receipt&or=<?= urlencode($p['or_number']) ?>" target="_blank" class="btn-view-receipt-outline" style="background: #0b3d2e; color: #ffffff; border-color: #0b3d2e; text-decoration: none;" title="Open and print official receipt">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                                    Print
+                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -1045,6 +1292,132 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+            <!-- ============================================== -->
+            <!-- VIEW 2.5: DEDICATED OFFICIAL RECEIPTS PAGE     -->
+            <!-- ============================================== -->
+            <?php elseif ($currentView === 'receipts'): ?>
+                <div class="portal-header-row">
+                    <div class="portal-title-flex">
+                        <div class="wallet-icon-box" style="background: #eff6ff; color: #2563eb;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="portal-page-title">Official Electronic Receipts (OR)</h1>
+                            <p class="portal-page-sub">Verified institutional payment vouchers generated upon transaction confirmation.</p>
+                        </div>
+                    </div>
+
+                    <?php if ($primaryFee && $totalRemaining > 0): ?>
+                        <button class="btn-pay-now-main" onclick="openPaymentModal(<?= $primaryFee['id'] ?>, '<?= e($termDescription) ?>', <?= $totalRemaining ?>)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            Pay Tuition Now &rarr;
+                        </button>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Metrics Row -->
+                <div class="metrics-grid-3">
+                    <div class="metric-mini-card">
+                        <div class="metric-mini-label">Total Receipts Issued</div>
+                        <div class="metric-mini-val" style="color: #2563eb;"><?= count($payments) ?></div>
+                    </div>
+                    <div class="metric-mini-card">
+                        <div class="metric-mini-label">Total Verified Payments</div>
+                        <div class="metric-mini-val" style="color: #059669;"><?= peso($totalPaid) ?></div>
+                    </div>
+                    <div class="metric-mini-card">
+                        <div class="metric-mini-label">Official Status</div>
+                        <div class="metric-mini-val" style="color: #0b3d2e; font-size: 18px;">
+                            Clearance Valid
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipts Grid / Card Directory -->
+                <div class="section-box">
+                    <div class="section-box-header">
+                        <div class="section-header-left">
+                            <div class="section-header-icon">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                            <h2 class="section-box-title">Official Receipt Records</h2>
+                        </div>
+                        <span class="section-box-meta"><?= count($payments) ?> Official Receipts Available</span>
+                    </div>
+
+                    <?php if (empty($payments)): ?>
+                        <div style="text-align: center; padding: 60px 20px; color: #64748b;">
+                            <div style="font-size: 36px; margin-bottom: 12px;">🧾</div>
+                            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Official Receipts Available</h3>
+                            <p style="font-size: 13px; max-width: 440px; margin: 0 auto 16px;">
+                                You have not made any tuition payments yet. Once a payment is submitted and confirmed, your official electronic receipt will appear here for download and printing.
+                            </p>
+                            <?php if ($primaryFee && $totalRemaining > 0): ?>
+                                <button class="btn-pay-now-main" onclick="openPaymentModal(<?= $primaryFee['id'] ?>, '<?= e($termDescription) ?>', <?= $totalRemaining ?>)">
+                                    Pay Tuition Now &rarr;
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+                            <?php foreach ($payments as $p): ?>
+                                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: all 0.2s ease;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
+                                        <div>
+                                            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Official Receipt No.</div>
+                                            <div style="font-size: 16px; font-weight: 800; color: #0f172a; font-family: monospace;"><?= e($p['or_number']) ?></div>
+                                        </div>
+                                        <span class="badge-pill paid" style="font-size: 10.5px; padding: 3px 8px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+                                            &#10003; VERIFIED
+                                        </span>
+                                    </div>
+
+                                    <div style="font-size: 12.5px; line-height: 1.8; color: #334155; margin-bottom: 14px;">
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: #64748b;">Assessment:</span>
+                                            <strong style="text-align: right; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= e($p['fee_desc']) ?></strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: #64748b;">Amount Paid:</span>
+                                            <strong style="color: #059669; font-size: 14px;"><?= peso((float)$p['amount']) ?></strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: #64748b;">Payment Method:</span>
+                                            <span style="font-weight: 600; text-transform: uppercase;"><?= e($p['payment_method']) ?></span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: #64748b;">Date Issued:</span>
+                                            <span><?= date('M d, Y h:i A', strtotime($p['paid_at'])) ?></span>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn-view-receipt-outline" style="flex: 1; justify-content: center; padding: 8px;"
+                                            onclick="openOfficialReceiptModal('<?= e($p['or_number']) ?>', '<?= peso((float)$p['amount']) ?>', '<?= date('M d, Y h:i A', strtotime($p['paid_at'])) ?>', '<?= strtoupper(e($p['payment_method'])) ?>', '<?= e($p['fee_desc']) ?>', '<?= e($studentName) ?>', '<?= e($studentNum) ?>', '<?= e($student['grade_level'] ?? 'BSCS 11A1') ?>')">
+                                            <span>👁</span> View Details
+                                        </button>
+                                        <a href="<?= APP_URL ?>/public/student/?view=receipt&or=<?= urlencode($p['or_number']) ?>" target="_blank" class="btn" style="flex: 1; justify-content: center; padding: 8px; background: #0b3d2e; color: #ffffff; border: 1px solid #0b3d2e; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>🖨</span> Print Voucher
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
             <!-- ============================================== -->
@@ -1152,6 +1525,123 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     </div>
 </div>
 
+<!-- ==================================================== -->
+<!-- MODAL: NATIONAL COLLEGE OF SCIENCE AND TECHNOLOGY   -->
+<!--        OFFICIAL ELECTRONIC RECEIPT VOUCHER           -->
+<!-- ==================================================== -->
+<div class="modal-backdrop" id="officialReceiptModal">
+    <div class="modal-window" style="max-width: 680px; padding: 0; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+        <!-- Top Modal Action Bar (Hidden on Print) -->
+        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; background: #0b3d2e; color: #ffffff; padding: 12px 20px;">
+            <div style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span>🧾</span> Official Electronic Receipt
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" onclick="window.printReceiptModal()" style="background: #ffffff; color: #0b3d2e; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print / Save PDF
+                </button>
+                <button type="button" onclick="closeReceiptModal()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+        </div>
+
+        <!-- Printable Receipt Content Area -->
+        <div id="ncstPrintableReceipt" style="padding: 32px 36px; background: #ffffff; color: #0f172a; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;">
+            <!-- School Institutional Header -->
+            <div style="text-align: center; border-bottom: 2.5px solid #0b3d2e; padding-bottom: 16px; margin-bottom: 20px;">
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #0b3d2e; text-transform: uppercase; margin-bottom: 2px;">Republic of the Philippines</div>
+                <h1 style="font-size: 21px; font-weight: 900; color: #0b3d2e; margin: 0; letter-spacing: 0.5px; text-transform: uppercase;">
+                    National College of Science and Technology
+                </h1>
+                <p style="font-size: 11.5px; color: #475569; margin: 3px 0 0; line-height: 1.4;">
+                    Emilio Aguinaldo Highway, Dasmariñas City, Cavite 4114, Philippines<br>
+                    Student Tuition &amp; Assessment Management System (PayTrack)
+                </p>
+                <div style="display: inline-block; margin-top: 10px; background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; font-weight: 800; font-size: 12px; padding: 4px 18px; border-radius: 20px; letter-spacing: 1px;">
+                    OFFICIAL ELECTRONIC RECEIPT
+                </div>
+            </div>
+
+            <!-- Receipt Meta Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; margin-bottom: 18px;">
+                <div>
+                    <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Receipt No (OR#):</span>
+                    <strong id="rcptOrNumber" style="font-size: 15px; color: #0b3d2e; font-family: monospace; margin-left: 6px;">OR-2024-00001</strong>
+                </div>
+                <div>
+                    <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Date Issued:</span>
+                    <strong id="rcptDate" style="font-size: 12.5px; color: #1e293b; margin-left: 6px;">—</strong>
+                </div>
+            </div>
+
+            <!-- Student & Academic Particulars Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; font-size: 13px; margin-bottom: 20px;">
+                <div style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Student Name</div>
+                    <div id="rcptStudentName" style="font-weight: 800; color: #0f172a; font-size: 14px;"><?= e($studentName) ?></div>
+                </div>
+                <div style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Student ID Number</div>
+                    <div id="rcptStudentId" style="font-weight: 800; color: #0f172a; font-family: monospace; font-size: 14px;"><?= e($studentNum) ?></div>
+                </div>
+                <div style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Course &amp; Section</div>
+                    <div id="rcptCourseSection" style="font-weight: 700; color: #0f172a;"><?= e($student['grade_level'] ?? 'BSCS 11A1') ?></div>
+                </div>
+                <div style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Payment Channel</div>
+                    <div id="rcptPaymentMethod" style="font-weight: 700; color: #0b3d2e; text-transform: uppercase;">ONLINE</div>
+                </div>
+            </div>
+
+            <!-- Payment Purpose & Breakdown Box -->
+            <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px;">
+                    <span>Particulars / Payment Description</span>
+                    <span>Amount</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #0f172a; padding: 4px 0;">
+                    <span id="rcptFeeDesc">Tuition Fee Assessment Installment</span>
+                    <strong id="rcptAmountSub" style="color: #0b3d2e;">₱0.00</strong>
+                </div>
+            </div>
+
+            <!-- Big Highlighted Amount Box -->
+            <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 22px;">
+                <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Total Amount Received</div>
+                <div id="rcptAmount" style="font-size: 30px; font-weight: 900; color: #15803d; line-height: 1.2;">₱0.00</div>
+                <div style="font-size: 11.5px; color: #166534; font-weight: 600; margin-top: 4px;">
+                    &#10003; Verified &amp; Credited to Student Tuition Ledger
+                </div>
+            </div>
+
+            <!-- Footer Signatures & Validation -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 11.5px;">
+                <div style="color: #64748b; line-height: 1.5; max-width: 320px;">
+                    <strong>National College of Science and Technology</strong><br>
+                    Official System Electronic Receipt<br>
+                    Valid for Examination Clearance &amp; Verification
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <div style="font-weight: 800; font-size: 12px; color: #0b3d2e; margin-bottom: 2px;">FINANCE &amp; CASHIERING</div>
+                    <div style="border-top: 1.5px solid #0f172a; padding-top: 4px; color: #475569; font-size: 10.5px;">
+                        Authorized Electronic Signature / Stamp
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar (Hidden on Print) -->
+        <div class="no-print" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" onclick="closeReceiptModal()" class="btn" style="padding: 9px 18px;">Close</button>
+            <button type="button" onclick="window.printReceiptModal()" class="btn" style="background: #0b3d2e; color: #ffffff; border: 1px solid #0b3d2e; padding: 9px 22px; font-weight: 700; gap: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Print Official Receipt</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1245,27 +1735,62 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         });
     }
 
-    // ── View Official Receipt in SweetAlert ───────────────────
-    function viewReceiptSummary(orNum, amount, date, method, feeDesc) {
-        Swal.fire({
-            icon: 'success',
-            title: 'Official Payment Receipt',
-            html: `
-                <div style="text-align: left; font-size: 13px; line-height: 1.8; color: #3f3f46;">
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
-                        <p style="margin: 3px 0;"><strong>Receipt No (OR#):</strong> ${orNum}</p>
-                        <p style="margin: 3px 0;"><strong>Student:</strong> <?= e($studentName) ?> (<?= e($studentNum) ?>)</p>
-                        <p style="margin: 3px 0;"><strong>Assessment Term:</strong> ${feeDesc}</p>
-                        <p style="margin: 3px 0;"><strong>Payment Method:</strong> ${method}</p>
-                        <p style="margin: 3px 0;"><strong>Date Recorded:</strong> ${date}</p>
-                        <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 8px 0;">
-                        <p style="margin: 3px 0; font-size: 15px; color: #059669;"><strong>Amount Paid:</strong> ${amount}</p>
-                    </div>
-                    <p style="font-size: 11.5px; color: #71717a; text-align: center;">Verified electronic receipt issued by PayTrack System.</p>
-                </div>
-            `,
-            confirmButtonText: 'Print / Close',
-            confirmButtonColor: '#18181b'
+    // ── Official Receipt Modal & Printable Logic ──────────────
+    window.openOfficialReceiptModal = function(orNum, amount, date, method, feeDesc, studentName, studentNum, course) {
+        const rcptOr = document.getElementById('rcptOrNumber');
+        const rcptD = document.getElementById('rcptDate');
+        const rcptName = document.getElementById('rcptStudentName');
+        const rcptId = document.getElementById('rcptStudentId');
+        const rcptSec = document.getElementById('rcptCourseSection');
+        const rcptMeth = document.getElementById('rcptPaymentMethod');
+        const rcptDesc = document.getElementById('rcptFeeDesc');
+        const rcptAmtSub = document.getElementById('rcptAmountSub');
+        const rcptAmt = document.getElementById('rcptAmount');
+
+        if (rcptOr) rcptOr.textContent = orNum || 'OR-2024-00001';
+        if (rcptD) rcptD.textContent = date || '—';
+        if (rcptName) rcptName.textContent = studentName || '<?= e($studentName) ?>';
+        if (rcptId) rcptId.textContent = studentNum || '<?= e($studentNum) ?>';
+        if (rcptSec) rcptSec.textContent = course || '<?= e($student['grade_level'] ?? 'BSCS 11A1') ?>';
+        if (rcptMeth) rcptMeth.textContent = (method || 'ONLINE').toUpperCase();
+        if (rcptDesc) rcptDesc.textContent = feeDesc || 'Tuition Fee Assessment Installment';
+        if (rcptAmtSub) rcptAmtSub.textContent = amount || '₱0.00';
+        if (rcptAmt) rcptAmt.textContent = amount || '₱0.00';
+
+        const modal = document.getElementById('officialReceiptModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
+    };
+
+    window.closeReceiptModal = function() {
+        const modal = document.getElementById('officialReceiptModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    };
+
+    window.printReceiptModal = function() {
+        window.print();
+    };
+
+    window.printOfficialReceiptVoucher = function(orNum, amount, date, method, feeDesc, studentName, studentNum, course) {
+        openOfficialReceiptModal(orNum, amount, date, method, feeDesc, studentName, studentNum, course);
+        setTimeout(() => {
+            window.print();
+        }, 300);
+    };
+
+    window.viewReceiptSummary = function(orNum, amount, date, method, feeDesc) {
+        openOfficialReceiptModal(orNum, amount, date, method, feeDesc, '<?= e($studentName) ?>', '<?= e($studentNum) ?>', '<?= e($student['grade_level'] ?? 'BSCS 11A1') ?>');
+    };
+
+    const officialReceiptModalEl = document.getElementById('officialReceiptModal');
+    if (officialReceiptModalEl) {
+        officialReceiptModalEl.addEventListener('click', function(e) {
+            if (e.target === officialReceiptModalEl) {
+                closeReceiptModal();
+            }
         });
     }
 

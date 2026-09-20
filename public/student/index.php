@@ -15,8 +15,8 @@ Auth::requireRole('student');
 $userId = Auth::userId();
 $student = Student::findByUserId($userId);
 
-// Routing view: 'fees' (default), 'history', 'password'
-$currentView = $_GET['view'] ?? 'fees';
+// Routing view: 'home' (default), 'fees', 'history', 'receipts', 'password'
+$currentView = $_GET['view'] ?? 'home';
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,5 +45,22 @@ $payments = $student ? Payment::getByStudentId($student['id']) : [];
 $paymentSuccess = Auth::getFlash('payment_success');
 $successMsg = Auth::getFlash('success');
 $errorMsg = Auth::getFlash('error');
+
+// Direct Standalone Printable Official Receipt View
+if ($currentView === 'receipt') {
+    $orNumber = trim($_GET['or'] ?? '');
+    $selectedPayment = null;
+    foreach ($payments as $p) {
+        if ($p['or_number'] === $orNumber) {
+            $selectedPayment = $p;
+            break;
+        }
+    }
+    if (!$selectedPayment && !empty($payments)) {
+        $selectedPayment = $payments[0];
+    }
+    require_once __DIR__ . '/../../views/student/receipt.php';
+    exit;
+}
 
 require_once __DIR__ . '/../../views/student/dashboard.php';

@@ -65,6 +65,40 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
             background: #ecfdf5;
             color: #065f46;
         }
+        .btn-logout-prominent {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #fee2e2;
+            border: 1.5px solid #f87171;
+            border-radius: 8px;
+            color: #b91c1c;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-logout-prominent:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+        .topbar-admin-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: 0.3px;
+        }
     </style>
 </head>
 <body>
@@ -87,7 +121,12 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
         <ul class="nav">
             <li>
                 <a href="<?= APP_URL ?>/public/admin/?view=home" class="nav-item <?= $currentView === 'home' ? 'active' : '' ?>">
-                    <span class="ic">&#8962;</span> Students
+                    <span class="ic">&#8962;</span> Home
+                </a>
+            </li>
+            <li>
+                <a href="<?= APP_URL ?>/public/admin/?view=students" class="nav-item <?= $currentView === 'students' ? 'active' : '' ?>">
+                    <span class="ic">&#128101;</span> Students &amp; Balances
                     <span class="badge-count"><?= count($students) ?></span>
                 </a>
             </li>
@@ -117,9 +156,14 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
             </li>
         </ul>
 
-        <div style="margin-top: auto; padding-top: 16px;">
-            <button type="button" class="btn" id="btnLogout" style="width: 100%; justify-content: center;">
-                &#8592; Logout
+        <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-logout-prominent" id="btnLogout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Sign Out / Logout</span>
             </button>
         </div>
     </aside>
@@ -137,10 +181,12 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
             </div>
 
             <div class="topbar-actions">
-                <button class="btn dark" id="btnOpenCreateStudentModal">
-                    <span>+</span> Create Student
-                </button>
-                <div class="avatar"></div>
+                <?php if ($currentView === 'students' || $currentView === 'home'): ?>
+                    <button class="btn dark" id="btnOpenCreateStudentModal">
+                        <span>+</span> Create Student
+                    </button>
+                <?php endif; ?>
+                <span class="topbar-admin-badge">Administrator</span>
             </div>
         </header>
 
@@ -160,12 +206,138 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
         <!-- Content Area -->
         <main class="content">
 
-            <!-- VIEW 1: STUDENTS -->
+            <!-- VIEW 0: ADMIN HOME / OVERVIEW -->
             <?php if ($currentView === 'home'): ?>
+                <div class="page-head">
+                    <div>
+                        <h1>System Overview</h1>
+                        <p>Welcome to PayTrack Administrative Portal &bull; School Year <?= date('Y') ?>-<?= date('Y') + 1 ?></p>
+                    </div>
+                    <div>
+                        <button class="btn dark" onclick="document.getElementById('createStudentModal').classList.add('active');">
+                            <span>+</span> Create Student
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Total Collections</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #059669;"><?= peso($totalRevenue) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Verified payments recorded</div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Outstanding Receivables</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #dc2626;"><?= peso($totalReceivables) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Unsettled tuition balances</div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Enrolled Students</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #2563eb;"><?= count($students) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Active student accounts</div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Official Receipts Issued</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #7c3aed;"><?= count($payments) ?></div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Payment receipts generated</div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Grid: Recent Verified Payments & Quick Actions -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+                    <!-- Left: Recent Verified Transactions -->
+                    <div class="panel" style="margin-bottom: 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">Recent Payment Transactions</h3>
+                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0;">Latest payments confirmed through the student portal</p>
+                            </div>
+                            <a href="<?= APP_URL ?>/public/admin/?view=transactions" style="font-size: 12px; font-weight: 600; color: #2563eb; text-decoration: none;">View All &rarr;</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Receipt (OR#)</th>
+                                        <th>Student</th>
+                                        <th>Amount</th>
+                                        <th>Method</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $recentPayments = array_slice($payments, 0, 5);
+                                    if (empty($recentPayments)): 
+                                    ?>
+                                        <tr>
+                                            <td colspan="5" style="text-align: center; padding: 32px; color: #64748b;">No payment transactions recorded yet.</td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($recentPayments as $rp): ?>
+                                            <tr>
+                                                <td><code><?= e($rp['or_number']) ?></code></td>
+                                                <td><strong><?= e($rp['first_name'] . ' ' . $rp['last_name']) ?></strong></td>
+                                                <td><strong style="color: #059669;"><?= peso((float)$rp['amount']) ?></strong></td>
+                                                <td><span class="badge completed"><?= strtoupper(e($rp['payment_method'])) ?></span></td>
+                                                <td><?= date('M d, Y', strtotime($rp['paid_at'])) ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Administrative Shortcuts -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Administrative Shortcuts</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <a href="<?= APP_URL ?>/public/admin/?view=students" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>👥</span> View All Student Records
+                                </a>
+                                <a href="<?= APP_URL ?>/public/admin/?view=transactions" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>🔁</span> Official Transactions Log
+                                </a>
+                                <a href="<?= APP_URL ?>/public/admin/?view=fees" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>💳</span> Manage Tuition Assessments
+                                </a>
+                                <a href="<?= APP_URL ?>/public/admin/?view=categories" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>⚙️</span> Configure Fee Categories
+                                </a>
+                                <a href="<?= APP_URL ?>/public/admin/?view=logs" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
+                                    <span>✉️</span> View Automated Email Logs
+                                </a>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 16px;">
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: #0b3d2e; margin-bottom: 6px;">
+                                <span>📌</span> Billing Information
+                            </div>
+                            <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0;">
+                                System automatically synchronizes section assignments with tuition semesters and emails login credentials to both student and parent upon account creation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- VIEW 1: STUDENTS & BALANCES -->
+            <?php elseif ($currentView === 'students'): ?>
                 <div class="page-head">
                     <div>
                         <h1>Students &amp; Balances</h1>
                         <p>Directory of student accounts, tuition statuses, and parent contacts</p>
+                    </div>
+                    <div>
+                        <button class="btn dark" onclick="document.getElementById('createStudentModal').classList.add('active');">
+                            <span>+</span> Create Student
+                        </button>
                     </div>
                 </div>
 
@@ -176,7 +348,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                                 <tr>
                                     <th>Student Name</th>
                                     <th>Student ID</th>
-                                    <th>Class / Grade</th>
+                                    <th>Class / Section</th>
                                     <th>Parent Contact</th>
                                     <th>Parent Email</th>
                                     <th>Remaining Balance</th>
@@ -187,7 +359,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                                 <?php if (empty($students)): ?>
                                     <tr>
                                         <td colspan="7" style="text-align: center; padding: 36px; color: var(--text-sub);">
-                                            No student accounts found. Click "+ Create Student" above to add.
+                                            No student accounts found. Click "+ Create Student" to add.
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -198,7 +370,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                                         <tr>
                                             <td><strong><?= e($s['first_name'] . ' ' . $s['last_name']) ?></strong></td>
                                             <td><code><?= e($s['student_id']) ?></code></td>
-                                            <td><?= e($s['grade_level'] ?: 'Class A') ?></td>
+                                            <td><span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;"><?= e($s['grade_level'] ?: 'BSCS 11A1') ?></span></td>
                                             <td><?= e($s['contact_number'] ?: '—') ?></td>
                                             <td style="color: var(--text-sub);"><?= e($s['parent_email'] ?: '—') ?></td>
                                             <td>
@@ -210,7 +382,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                                                 <button class="action-btn" onclick="viewStudentDetails(<?= htmlspecialchars(json_encode($s)) ?>, <?= $rem ?>)">
                                                     View
                                                 </button>
-                                                <form method="POST" action="<?= APP_URL ?>/public/admin/" style="display: inline;" id="delStudentForm-<?= $s['id'] ?>">
+                                                <form method="POST" action="<?= APP_URL ?>/public/admin/?view=students" style="display: inline;" id="delStudentForm-<?= $s['id'] ?>">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="delete_student">
                                                     <input type="hidden" name="student_id" value="<?= $s['id'] ?>">
@@ -493,7 +665,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
         <button class="modal-close-x" id="btnCloseCreateStudentModal">&times;</button>
         <h2 class="modal-header-title">Create Student &amp; Assign Tuition</h2>
 
-        <form method="POST" action="<?= APP_URL ?>/public/admin/" id="createStudentForm">
+        <form method="POST" action="<?= APP_URL ?>/public/admin/?view=students" id="createStudentForm">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="create_student">
 
@@ -504,8 +676,60 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                     <small style="color: #64748b; font-size: 11px; display: block; margin-top: 3px;">Auto-formats: 4 numbers, automatic dash, then 5 numbers (e.g. <code>2024-12345</code>)</small>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="newClassGrade">Class / Grade *</label>
-                    <input type="text" class="form-control" name="class_grade" id="newClassGrade" required value="Grade 11 - STEM">
+                    <label class="form-label" for="newCourse">Course / Program *</label>
+                    <select class="form-control" name="course" id="newCourse" required onchange="updateGeneratedSection()">
+                        <option value="BSCS" selected>BSCS — BS Computer Science</option>
+                        <option value="BSIT">BSIT — BS Information Technology</option>
+                        <option value="BSEE">BSEE — BS Electrical Engineering</option>
+                        <option value="BSHM">BSHM — BS Hospitality Management</option>
+                        <option value="BSIE">BSIE — BS Industrial Engineering</option>
+                        <option value="BSCrim">BSCrim — BS Criminology</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Client-Required Section Dropdown & Pattern Selector -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🎓 Class Year Level &amp; Section Assignment</span>
+                    <span id="sectionBadgePreview" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800;">BSCS 11A1</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 8px;">
+                    <div>
+                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Year Level (1-4) *</label>
+                        <select class="form-control" id="secYearLevel" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
+                            <option value="1" selected>1st Year (1)</option>
+                            <option value="2">2nd Year (2)</option>
+                            <option value="3">3rd Year (3)</option>
+                            <option value="4">4th Year (4)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Semester (Synced)</label>
+                        <input type="text" id="secSemesterDisplay" class="form-control" value="1st Sem (1)" readonly style="padding: 6px 8px; font-size: 12px; background: #f1f5f9; cursor: not-allowed;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Timeline / Shift *</label>
+                        <select class="form-control" id="secTimeline" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
+                            <option value="A" selected>A — Afternoon</option>
+                            <option value="M">M — Morning</option>
+                            <option value="E">E — Evening</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Section (1-3) *</label>
+                        <select class="form-control" id="secNumber" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
+                            <option value="1" selected>Section 1 (1)</option>
+                            <option value="2">Section 2 (2)</option>
+                            <option value="3">Section 3 (3)</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Hidden inputs passed to server -->
+                <input type="hidden" name="section_code" id="hiddenSectionCode" value="11A1">
+                <input type="hidden" name="class_grade" id="hiddenClassGrade" value="BSCS 11A1">
+                <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
+                    Pattern: <strong>[Year: 1-4][Sem: 1-2][Timeline: M/A/E][Sec: 1-3]</strong> &bull; E.g. <code>11A1</code>, <code>12A2</code>, <code>21A3</code>
                 </div>
             </div>
 
@@ -554,15 +778,15 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="createSchoolYear">School Year *</label>
-                    <input type="text" class="form-control" name="school_year" id="createSchoolYear" value="2024-2025" required>
+                    <input type="text" class="form-control" name="school_year" id="createSchoolYear" value="<?= date('Y') ?>-<?= date('Y') + 1 ?>" required>
                 </div>
             </div>
 
             <div class="form-row-2">
                 <div class="form-group">
-                    <label class="form-label">Semester *</label>
-                    <select class="form-control" name="semester" required>
-                        <option value="1st Semester">1st Semester</option>
+                    <label class="form-label" for="createSemester">Semester *</label>
+                    <select class="form-control" name="semester" id="createSemester" required onchange="onSemesterChange(this.value)">
+                        <option value="1st Semester" selected>1st Semester</option>
                         <option value="2nd Semester">2nd Semester</option>
                         <option value="Summer">Summer</option>
                     </select>
@@ -948,6 +1172,35 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
         });
     }
     if (btnCloseCreate) btnCloseCreate.addEventListener('click', () => createStudentModal.classList.remove('active'));
+
+    // Dynamic Course & 4-Part Section Code Generator ([Year][Sem][Shift][Sec])
+    window.onSemesterChange = function (semVal) {
+        const secSemDisplay = document.getElementById('secSemesterDisplay');
+        if (semVal && semVal.includes('2nd')) {
+            if (secSemDisplay) secSemDisplay.value = '2nd Sem (2)';
+        } else {
+            if (secSemDisplay) secSemDisplay.value = '1st Sem (1)';
+        }
+        updateGeneratedSection();
+    };
+
+    window.updateGeneratedSection = function () {
+        const course = document.getElementById('newCourse') ? document.getElementById('newCourse').value : 'BSCS';
+        const year = document.getElementById('secYearLevel') ? document.getElementById('secYearLevel').value : '1';
+        const createSem = document.getElementById('createSemester') ? document.getElementById('createSemester').value : '1st Semester';
+        const semDigit = createSem && createSem.includes('2nd') ? '2' : '1';
+        const shift = document.getElementById('secTimeline') ? document.getElementById('secTimeline').value : 'A';
+        const secNum = document.getElementById('secNumber') ? document.getElementById('secNumber').value : '1';
+
+        const sectionCode = `${year}${semDigit}${shift}${secNum}`;
+        const fullClass = `${course} ${sectionCode}`;
+
+        if (document.getElementById('hiddenSectionCode')) document.getElementById('hiddenSectionCode').value = sectionCode;
+        if (document.getElementById('hiddenClassGrade')) document.getElementById('hiddenClassGrade').value = fullClass;
+        if (document.getElementById('sectionBadgePreview')) {
+            document.getElementById('sectionBadgePreview').textContent = fullClass;
+        }
+    };
 
     // Automatic Student ID Input Mask: 4 digits, automatic dash '-', then 5 digits (0000-00000)
     const newStudentIdInput = document.getElementById('newStudentId');

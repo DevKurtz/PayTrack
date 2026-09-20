@@ -23,8 +23,23 @@ class AdminController
         $parentName    = trim($_POST['parent_name'] ?? '');
         $parentEmail   = trim($_POST['parent_email'] ?? '');
         $studentEmail  = trim($_POST['student_email'] ?? '');
-        $classGrade    = trim($_POST['class_grade'] ?? 'Class A');
         $parentContact = trim($_POST['parent_contact'] ?? '');
+
+        // Course & Section Code
+        $allowedCourses = ['BSCS', 'BSIT', 'BSEE', 'BSHM', 'BSIE', 'BSCrim'];
+        $course        = trim($_POST['course'] ?? 'BSCS');
+        $sectionCode   = trim($_POST['section_code'] ?? '11A1');
+        $classGrade    = trim($_POST['class_grade'] ?? '');
+
+        if (!in_array($course, $allowedCourses)) {
+            $course = 'BSCS';
+        }
+
+        if (!empty($course) && !empty($sectionCode)) {
+            $classGrade = "{$course} {$sectionCode}";
+        } elseif (empty($classGrade)) {
+            $classGrade = 'BSCS 11A1';
+        }
 
         // Tuition Fee Assessment Fields
         $totalTuition  = (float) ($_POST['total_tuition'] ?? 0);
@@ -35,34 +50,34 @@ class AdminController
         // Validations
         if (!preg_match('/^\d{4}-\d{5}$/', $studentId)) {
             Auth::setFlash('error', 'Invalid Student ID format. Must be 4 numbers, hyphen, and 5 numbers (e.g. 2024-12345).');
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         if (!isValidName($firstName) || !isValidName($lastName)) {
             Auth::setFlash('error', 'Please enter a valid student first and last name (letters only).');
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         if (!isValidEmail($studentEmail)) {
             Auth::setFlash('error', 'Please provide a valid Student Email address.');
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         if (!empty($parentEmail) && !isValidEmail($parentEmail)) {
             Auth::setFlash('error', 'Please provide a valid Parent Email address.');
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         $fixedSum = FeeCategory::getFixedTotal();
         if ($totalTuition < $fixedSum) {
             Auth::setFlash('error', 'Total tuition fee must be at least ' . peso($fixedSum) . ' to cover default school fees.');
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         // Check if student id or username already exists
         if (User::findByUsername($studentId)) {
             Auth::setFlash('error', "Student ID '{$studentId}' is already registered.");
-            redirect(APP_URL . '/public/admin/');
+            redirect(APP_URL . '/public/admin/?view=students');
         }
 
         // Default password = studentId + UPPERCASE(lastName)
@@ -134,7 +149,7 @@ class AdminController
             'tuition' => $totalTuition
         ]);
         Auth::setFlash('success', "Student Account & Tuition Assessment Created for {$firstName} {$lastName}.");
-        redirect(APP_URL . '/public/admin/');
+        redirect(APP_URL . '/public/admin/?view=students');
     }
 
     public static function assignFee(): void
@@ -220,7 +235,7 @@ class AdminController
             Student::delete($id);
             Auth::setFlash('success', 'Student record deleted successfully.');
         }
-        redirect(APP_URL . '/public/admin/');
+        redirect(APP_URL . '/public/admin/?view=students');
     }
 
     public static function deleteFee(): void

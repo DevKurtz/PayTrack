@@ -87,7 +87,6 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #64748b;">
                                     <span>Welcome, <strong>Juan Dela Cruz</strong></span>
-                                    <div style="width: 22px; height: 22px; border-radius: 50%; background: #cbd5e1;"></div>
                                 </div>
                             </div>
 

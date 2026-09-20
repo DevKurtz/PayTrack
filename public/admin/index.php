@@ -46,6 +46,18 @@ $fees = TuitionFee::all();
 $payments = Payment::all();
 $feeCategories = FeeCategory::all();
 $fixedFeeTotal = FeeCategory::getFixedTotal();
+$categoryCount = count($feeCategories);
+
+// Compute Summary Metrics for Home Dashboard
+$totalRevenue = 0;
+foreach ($payments as $p) {
+    $totalRevenue += (float) ($p['amount'] ?? 0);
+}
+$totalAssessed = 0;
+foreach ($fees as $f) {
+    $totalAssessed += (float) ($f['total_amount'] ?? 0);
+}
+$totalReceivables = max(0, $totalAssessed - $totalRevenue);
 
 // Query email logs
 $db = Database::getInstance();
