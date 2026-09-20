@@ -23,18 +23,69 @@
                 <span class="brand-name">PayTrack</span>
             </a>
 
-            <ul class="nav-menu">
+            <!-- Desktop Navigation Menu -->
+            <ul class="nav-menu desktop-nav-menu">
                 <li><a href="#home" class="nav-link active">Home</a></li>
                 <li><a href="#features" class="nav-link">Features</a></li>
                 <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
                 <li><a href="#about" class="nav-link">About</a></li>
             </ul>
 
-            <button class="btn-header-login" id="btnHeaderLogin">
-                Login / Portal <span>&rarr;</span>
-            </button>
+            <!-- Desktop Button & Mobile Hamburger Toggle -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn-header-login btn-desktop-login" id="btnHeaderLogin">
+                    Login / Portal <span>&rarr;</span>
+                </button>
+                <button class="nav-hamburger" id="btnNavToggle" aria-label="Open navigation menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
         </div>
     </header>
+
+    <!-- ── Mobile Navigation Drawer & Backdrop (Independent Stacking) ── -->
+    <div class="mobile-drawer-overlay" id="mobileDrawerOverlay"></div>
+
+    <aside class="mobile-drawer" id="mobileDrawer">
+        <div class="mobile-drawer-top">
+            <a href="#" class="landing-brand" onclick="closeMobileDrawer()">
+                <div class="brand-badge">A</div>
+                <span class="brand-name">PayTrack</span>
+            </a>
+            <button class="mobile-drawer-close-btn" id="btnNavClose" aria-label="Close menu">&times;</button>
+        </div>
+
+        <div class="mobile-drawer-content">
+            <div class="mobile-section-label">Navigation</div>
+            <ul class="mobile-nav-list">
+                <li><a href="#home" class="mobile-nav-item active" onclick="closeMobileDrawer()"><span class="m-icon">🏠</span> Home</a></li>
+                <li><a href="#features" class="mobile-nav-item" onclick="closeMobileDrawer()"><span class="m-icon">⚡</span> Features</a></li>
+                <li><a href="#how-it-works" class="mobile-nav-item" onclick="closeMobileDrawer()"><span class="m-icon">📋</span> How It Works</a></li>
+                <li><a href="#about" class="mobile-nav-item" onclick="closeMobileDrawer()"><span class="m-icon">ℹ️</span> About PayTrack</a></li>
+            </ul>
+
+            <div class="mobile-section-label" style="margin-top: 26px;">Select Login Portal</div>
+            <div class="mobile-portal-cards">
+                <button type="button" class="mobile-portal-card student-card" onclick="openPortalFromNav('student')">
+                    <div class="mp-icon">🎓</div>
+                    <div class="mp-details">
+                        <div class="mp-title">Student Portal</div>
+                        <div class="mp-desc">Sign in with Student ID & password</div>
+                    </div>
+                    <div class="mp-arrow">&rarr;</div>
+                </button>
+
+                <button type="button" class="mobile-portal-card admin-card" onclick="openPortalFromNav('admin')">
+                    <div class="mp-icon">🛡️</div>
+                    <div class="mp-details">
+                        <div class="mp-title">Administrator Portal</div>
+                        <div class="mp-desc">Sign in with Admin credentials</div>
+                    </div>
+                    <div class="mp-arrow">&rarr;</div>
+                </button>
+            </div>
+        </div>
+    </aside>
 
     <!-- ── 2. Hero Section with Live Mockups ── -->
     <section class="hero-section" id="home">
@@ -360,6 +411,16 @@
     <div class="modal-backdrop" id="loginModalBackdrop">
         <div class="modal-window">
             <button class="modal-close-x" id="btnCloseLoginModal" aria-label="Close">&times;</button>
+
+            <!-- Segmented Role Selector Tabs (Clear Options Right Up Front) -->
+            <div class="modal-role-tabs">
+                <button type="button" class="modal-role-tab active" id="tabRoleStudent" onclick="applyRole('student')">
+                    <span class="mrt-icon">🎓</span> Student / Parent
+                </button>
+                <button type="button" class="modal-role-tab" id="tabRoleAdmin" onclick="applyRole('admin')">
+                    <span class="mrt-icon">🛡️</span> Administrator
+                </button>
+            </div>
             
             <div class="modal-header-box">
                 <div class="modal-header-icon" id="modalHeaderIcon">🎓</div>
@@ -394,10 +455,10 @@
                     <button type="submit" class="btn-signin-submit">Sign In</button>
                 </div>
 
-                <!-- Subtle role switcher link -->
+                <!-- Role switcher text link -->
                 <div style="text-align: center;">
                     <a href="javascript:void(0)" class="role-switcher-link" id="toggleRoleLink">
-                        Sign in as Administrator &rarr;
+                        Switch to Administrator Portal &rarr;
                     </a>
                 </div>
             </form>
@@ -428,18 +489,25 @@
             currentRole = role;
             loginRoleInput.value = role;
 
+            const tabStudent = document.getElementById('tabRoleStudent');
+            const tabAdmin   = document.getElementById('tabRoleAdmin');
+
             if (role === 'admin') {
-                modalHeaderIcon.textContent = '⚙️';
+                if (tabAdmin) tabAdmin.classList.add('active');
+                if (tabStudent) tabStudent.classList.remove('active');
+                modalHeaderIcon.textContent = '🛡️';
                 modalHeaderIcon.style.background = '#f1f5f9';
                 modalHeaderIcon.style.color = '#0f172a';
                 loginModalTitle.textContent = 'Admin Sign In';
                 loginModalSub.textContent = 'Enter your administrative credentials';
                 usernameFieldLabel.textContent = 'Admin Username';
                 inputUsername.placeholder = 'admin';
-                toggleRoleLink.innerHTML = '&larr; Sign in as Student / Parent';
+                toggleRoleLink.innerHTML = '&larr; Switch to Student / Parent Portal';
                 const pwHint = document.getElementById('passwordHint');
                 if (pwHint) pwHint.style.display = 'none';
             } else {
+                if (tabStudent) tabStudent.classList.add('active');
+                if (tabAdmin) tabAdmin.classList.remove('active');
                 modalHeaderIcon.textContent = '🎓';
                 modalHeaderIcon.style.background = '#ecfdf5';
                 modalHeaderIcon.style.color = '#059669';
@@ -447,7 +515,7 @@
                 loginModalSub.textContent = 'Enter your Student ID and password to access your portal';
                 usernameFieldLabel.textContent = 'Student ID';
                 inputUsername.placeholder = 'e.g. 2023-53512';
-                toggleRoleLink.innerHTML = 'Sign in as Administrator &rarr;';
+                toggleRoleLink.innerHTML = 'Switch to Administrator Portal &rarr;';
                 const pwHint = document.getElementById('passwordHint');
                 if (pwHint) pwHint.style.display = 'block';
             }
@@ -476,12 +544,12 @@
             loginBackdrop.classList.remove('active');
         }
 
-        btnHeaderLogin.addEventListener('click', () => openModal('student'));
-        btnHeroGetStarted.addEventListener('click', () => openModal('student'));
-        btnFooterGetStarted.addEventListener('click', () => openModal('student'));
-        btnCloseLoginModal.addEventListener('click', closeModal);
+        btnHeaderLogin && btnHeaderLogin.addEventListener('click', () => openModal('student'));
+        btnHeroGetStarted && btnHeroGetStarted.addEventListener('click', () => openModal('student'));
+        btnFooterGetStarted && btnFooterGetStarted.addEventListener('click', () => openModal('student'));
+        btnCloseLoginModal && btnCloseLoginModal.addEventListener('click', closeModal);
 
-        toggleRoleLink.addEventListener('click', () => {
+        toggleRoleLink && toggleRoleLink.addEventListener('click', () => {
             applyRole(currentRole === 'student' ? 'admin' : 'student');
             inputUsername.value = '';
             document.getElementById('inputPassword').value = '';
@@ -491,6 +559,54 @@
         window.addEventListener('click', (e) => {
             if (e.target === loginBackdrop) closeModal();
         });
+
+        // ── Mobile Drawer Navigation ──
+        const btnNavToggle         = document.getElementById('btnNavToggle');
+        const btnNavClose          = document.getElementById('btnNavClose');
+        const mobileDrawer         = document.getElementById('mobileDrawer');
+        const mobileDrawerOverlay  = document.getElementById('mobileDrawerOverlay');
+
+        function openMobileDrawer() {
+            if (!mobileDrawer) return;
+            mobileDrawer.classList.add('open');
+            mobileDrawerOverlay.classList.add('active');
+            btnNavToggle && btnNavToggle.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeMobileDrawer = function () {
+            if (!mobileDrawer) return;
+            mobileDrawer.classList.remove('open');
+            mobileDrawerOverlay.classList.remove('active');
+            btnNavToggle && btnNavToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        window.openPortalFromNav = function(role) {
+            closeMobileDrawer();
+            setTimeout(function() {
+                openModal(role);
+            }, 100);
+        };
+
+        if (btnNavToggle) {
+            btnNavToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (mobileDrawer.classList.contains('open')) {
+                    closeMobileDrawer();
+                } else {
+                    openMobileDrawer();
+                }
+            });
+        }
+
+        if (btnNavClose) {
+            btnNavClose.addEventListener('click', closeMobileDrawer);
+        }
+
+        if (mobileDrawerOverlay) {
+            mobileDrawerOverlay.addEventListener('click', closeMobileDrawer);
+        }
 
         // Show flash error if login fails
         const flashError = <?= json_encode($error) ?>;

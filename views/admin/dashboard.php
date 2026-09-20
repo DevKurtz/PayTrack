@@ -155,6 +155,36 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
             font-size: 12px;
             color: #64748b;
         }
+        /* ── Admin Dashboard Mobile Responsive ── */
+        @media (max-width: 768px) {
+            .topbar { padding: 10px 12px; gap: 6px; }
+            .search { max-width: 130px !important; }
+            .page-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .page-head .btn { font-size: 11.5px; }
+
+            /* KPI cards: 2 per row on mobile */
+            div[style*="repeat(auto-fit, minmax(220px"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Breakdown preview stacks */
+            .breakdown-preview-card { font-size: 11.5px; }
+
+            /* Modal full width */
+            .modal-window { padding: 20px 14px 18px !important; }
+
+            /* Create student form: 4-col section grid stacks */
+            div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            div[style*="repeat(auto-fit, minmax(220px"] {
+                grid-template-columns: 1fr !important;
+            }
+            .search { max-width: 100px !important; }
+        }
     </style>
 </head>
 <body>
@@ -305,7 +335,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                 </div>
 
                 <!-- 2-Column Grid: Recent Verified Payments & Quick Actions -->
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div class="dashboard-2col-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
                     <!-- Left: Recent Verified Transactions -->
                     <div class="panel" style="margin-bottom: 0;">
                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">

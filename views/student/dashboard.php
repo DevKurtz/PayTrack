@@ -702,6 +702,31 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                 margin: 10mm;
             }
         }
+        /* ── Mobile Responsive ── */
+        @media (max-width: 768px) {
+            .portal-header-row { gap: 8px; flex-wrap: wrap; }
+            .search-container { max-width: 140px; }
+            .search-container input { font-size: 11.5px; }
+
+            .metrics-grid-3 { grid-template-columns: 1fr 1fr; }
+
+            .hero-dashboard-grid { grid-template-columns: 1fr; }
+
+            .section-box-header { flex-wrap: wrap; gap: 8px; }
+
+            /* Pay tuition button full-width on small screens */
+            .btn-pay-now { width: 100% !important; justify-content: center; }
+
+            /* Receipt cards: ensure single col */
+            .receipt-cards-grid { grid-template-columns: 1fr !important; }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid-3 { grid-template-columns: 1fr; }
+            .search-container { max-width: 110px; }
+            .portal-header-row h1 { font-size: 15px; }
+        }
+
     </style>
 </head>
 <body>
@@ -889,7 +914,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                 </div>
 
                 <!-- 2-Column Section: Recent Receipts & Quick Shortcuts -->
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div class="dashboard-2col-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
                     <!-- Left: Recent Payments Log -->
                     <div class="section-box" style="margin-bottom: 0;">
                         <div class="section-box-header">
@@ -1430,7 +1455,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
-                        <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+                        <div class="receipt-cards-grid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
                             <?php foreach ($payments as $p): ?>
                                 <div class="receipt-card-item" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: all 0.2s ease;">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">

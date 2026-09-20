@@ -594,6 +594,15 @@ tbody td {
 }
 
 /* ══════════════════════════════════════════════
+   TABLET RESPONSIVE (≤900px)
+══════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .dashboard-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════
    MOBILE & TABLET RESPONSIVE RULES (Max Width 768px)
 ══════════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -627,16 +636,22 @@ tbody td {
   }
 
   .search {
-    max-width: 180px;
+    max-width: 150px;
     padding: 6px 10px;
+    min-width: 0;
   }
 
   .search .kbd {
     display: none;
   }
 
+  /* Hide search on very small screens, only show icon */
+  .topbar-actions {
+    flex-shrink: 0;
+  }
+
   .content {
-    padding: 16px 14px 28px;
+    padding: 14px 12px 28px;
   }
 
   .page-head {
@@ -645,10 +660,62 @@ tbody td {
     gap: 8px;
   }
 
+  /* Stack 2-col form rows on mobile */
   .form-row-2 {
     grid-template-columns: 1fr;
     gap: 0;
   }
+
+  /* Dashboard 2-col grids stack on mobile */
+  .dashboard-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Panel header actions wrap */
+  .panel-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Table: allow horizontal scroll */
+  .panel {
+    overflow-x: auto;
+  }
+
+  /* Buttons in page-head wrap */
+  .page-head .btn {
+    font-size: 11.5px;
+    padding: 6px 10px;
+  }
+
+  /* Modal fits screen */
+  .modal-window {
+    max-width: 100%;
+    margin: 8px;
+    padding: 20px 16px 18px;
+    border-radius: 12px;
+  }
+
+  /* Receipt cards: single column */
+  .receipt-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Small Mobile (≤480px) ── */
+@media (max-width: 480px) {
+  .topbar { padding: 8px 10px; }
+  .search { max-width: 120px; font-size: 11.5px; }
+  .content { padding: 12px 10px 24px; }
+
+  /* KPI cards: 2 cols instead of 4 on tiny screens */
+  .kpi-grid-auto {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  tbody td, thead th { padding: 10px 12px; font-size: 11.5px; }
+
+  .btn { padding: 6px 10px; font-size: 11.5px; }
 }
 
 /* ── SweetAlert2 Overrides ── */
