@@ -745,48 +745,34 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
                 </div>
             </div>
 
-            <!-- Client-Required Section Dropdown & Pattern Selector -->
+            <!-- Section Dropdown -->
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
                 <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <span>🎓 Class Year Level &amp; Section Assignment</span>
+                    <span>🎓 Section Assignment</span>
                     <span id="sectionBadgePreview" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800;">BSCS 11A1</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 8px;">
-                    <div>
-                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Year Level (1-4) *</label>
-                        <select class="form-control" id="secYearLevel" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
-                            <option value="1" selected>1st Year (1)</option>
-                            <option value="2">2nd Year (2)</option>
-                            <option value="3">3rd Year (3)</option>
-                            <option value="4">4th Year (4)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Semester (Synced)</label>
-                        <input type="text" id="secSemesterDisplay" class="form-control" value="1st Sem (1)" readonly style="padding: 6px 8px; font-size: 12px; background: #f1f5f9; cursor: not-allowed;">
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Timeline / Shift *</label>
-                        <select class="form-control" id="secTimeline" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
-                            <option value="A" selected>A — Afternoon</option>
-                            <option value="M">M — Morning</option>
-                            <option value="E">E — Evening</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 3px;">Section (1-3) *</label>
-                        <select class="form-control" id="secNumber" style="padding: 6px 8px; font-size: 12px;" onchange="updateGeneratedSection()">
-                            <option value="1" selected>Section 1 (1)</option>
-                            <option value="2">Section 2 (2)</option>
-                            <option value="3">Section 3 (3)</option>
-                        </select>
-                    </div>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-bottom: 4px;">Section Code *</label>
+                    <select class="form-control" id="sectionDropdown" onchange="updateGeneratedSection()" required>
+                        <?php
+                        $shifts = ['A', 'M', 'E'];
+                        $shiftLabels = ['A' => 'Afternoon', 'M' => 'Morning', 'E' => 'Evening'];
+                        foreach ([1,2,3,4] as $yr):
+                            foreach ([1,2] as $sem):
+                                foreach ($shifts as $sh):
+                                    foreach ([1,2,3] as $sec):
+                                        $code = "{$yr}{$sem}{$sh}{$sec}";
+                                        $selected = ($code === '11A1') ? ' selected' : '';
+                        ?>
+                        <option value="<?= $code ?>"<?= $selected ?>><?= $code ?> — Year <?= $yr ?>, Sem <?= $sem ?>, <?= $shiftLabels[$sh] ?>, Section <?= $sec ?></option>
+                        <?php endforeach; endforeach; endforeach; endforeach; ?>
+                    </select>
                 </div>
                 <!-- Hidden inputs passed to server -->
                 <input type="hidden" name="section_code" id="hiddenSectionCode" value="11A1">
                 <input type="hidden" name="class_grade" id="hiddenClassGrade" value="BSCS 11A1">
                 <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
-                    Pattern: <strong>[Year: 1-4][Sem: 1-2][Timeline: M/A/E][Sec: 1-3]</strong> &bull; E.g. <code>11A1</code>, <code>12A2</code>, <code>21A3</code>
+                    Pattern: <strong>[Year: 1-4][Sem: 1-2][Shift: M/A/E][Section: 1-3]</strong> &bull; Selecting a section auto-fills the semester below.
                 </div>
             </div>
 
@@ -842,11 +828,11 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
             <div class="form-row-2">
                 <div class="form-group">
                     <label class="form-label" for="createSemester">Semester *</label>
-                    <select class="form-control" name="semester" id="createSemester" required onchange="onSemesterChange(this.value)">
+                    <select class="form-control" name="semester" id="createSemester" required>
                         <option value="1st Semester" selected>1st Semester</option>
                         <option value="2nd Semester">2nd Semester</option>
-                        <option value="Summer">Summer</option>
                     </select>
+                    <small style="color: #64748b; font-size: 11px;">Auto-set from section code's 2nd digit.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Payment Due Date</label>
@@ -1222,6 +1208,7 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
     if (btnOpenCreate) {
         btnOpenCreate.addEventListener('click', () => {
             createStudentModal.classList.add('active');
+            updateGeneratedSection(); // sync badge & semester on open
             const sid = document.getElementById('newStudentId');
             if (sid) {
                 setTimeout(() => sid.focus(), 150);
@@ -1230,34 +1217,33 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
     }
     if (btnCloseCreate) btnCloseCreate.addEventListener('click', () => createStudentModal.classList.remove('active'));
 
-    // Dynamic Course & 4-Part Section Code Generator ([Year][Sem][Shift][Sec])
-    window.onSemesterChange = function (semVal) {
-        const secSemDisplay = document.getElementById('secSemesterDisplay');
-        if (semVal && semVal.includes('2nd')) {
-            if (secSemDisplay) secSemDisplay.value = '2nd Sem (2)';
-        } else {
-            if (secSemDisplay) secSemDisplay.value = '1st Sem (1)';
-        }
-        updateGeneratedSection();
-    };
-
+    // Single Section Dropdown → auto-fills preview badge + semester field
     window.updateGeneratedSection = function () {
         const course = document.getElementById('newCourse') ? document.getElementById('newCourse').value : 'BSCS';
-        const year = document.getElementById('secYearLevel') ? document.getElementById('secYearLevel').value : '1';
-        const createSem = document.getElementById('createSemester') ? document.getElementById('createSemester').value : '1st Semester';
-        const semDigit = createSem && createSem.includes('2nd') ? '2' : '1';
-        const shift = document.getElementById('secTimeline') ? document.getElementById('secTimeline').value : 'A';
-        const secNum = document.getElementById('secNumber') ? document.getElementById('secNumber').value : '1';
+        const sectionDropdown = document.getElementById('sectionDropdown');
+        const sectionCode = sectionDropdown ? sectionDropdown.value : '11A1';
 
-        const sectionCode = `${year}${semDigit}${shift}${secNum}`;
         const fullClass = `${course} ${sectionCode}`;
 
+        // Update hidden fields
         if (document.getElementById('hiddenSectionCode')) document.getElementById('hiddenSectionCode').value = sectionCode;
-        if (document.getElementById('hiddenClassGrade')) document.getElementById('hiddenClassGrade').value = fullClass;
+        if (document.getElementById('hiddenClassGrade'))  document.getElementById('hiddenClassGrade').value  = fullClass;
+
+        // Update badge preview
         if (document.getElementById('sectionBadgePreview')) {
             document.getElementById('sectionBadgePreview').textContent = fullClass;
         }
+
+        // Auto-set semester from 2nd digit of section code (e.g. "11A1" → digit at index 1 = '1')
+        const semDigit = sectionCode.charAt(1);
+        const createSemesterEl = document.getElementById('createSemester');
+        if (createSemesterEl) {
+            createSemesterEl.value = semDigit === '2' ? '2nd Semester' : '1st Semester';
+        }
     };
+
+    // Initialize on page load
+    updateGeneratedSection();
 
     // Automatic Student ID Input Mask: 4 digits, automatic dash '-', then 5 digits (0000-00000)
     const newStudentIdInput = document.getElementById('newStudentId');
@@ -1285,24 +1271,87 @@ $variableName = $variableCat['name'] ?? 'Subject Fee';
         });
     }
 
+    // ── Reusable red-field validation (replaces browser tooltip) ──────────────
+    function applyRedFieldValidation(form) {
+        if (!form) return;
+        form.setAttribute('novalidate', '');
+        form.addEventListener('submit', function (e) {
+            let firstInvalid = null;
+            form.querySelectorAll('[required]').forEach(function (field) {
+                // Reset previous error state
+                field.style.borderColor = '';
+                field.style.background  = '';
+                const existingMsg = field.parentElement.querySelector('.inline-field-error');
+                if (existingMsg) existingMsg.remove();
+
+                const isEmpty = field.tagName === 'SELECT'
+                    ? field.value === '' || field.value === null
+                    : !field.value.trim();
+
+                if (isEmpty) {
+                    e.preventDefault();
+                    field.style.borderColor = '#ef4444';
+                    field.style.background  = '#fef2f2';
+
+                    const msg = document.createElement('span');
+                    msg.className  = 'inline-field-error';
+                    msg.textContent = 'This field is required.';
+                    msg.style.cssText = 'color:#ef4444;font-size:11px;display:block;margin-top:4px;font-weight:600;';
+                    field.parentElement.appendChild(msg);
+
+                    if (!firstInvalid) firstInvalid = field;
+
+                    field.addEventListener('input', function clear() {
+                        field.style.borderColor = '';
+                        field.style.background  = '';
+                        const m = field.parentElement.querySelector('.inline-field-error');
+                        if (m) m.remove();
+                        field.removeEventListener('input', clear);
+                    });
+                    field.addEventListener('change', function clear() {
+                        field.style.borderColor = '';
+                        field.style.background  = '';
+                        const m = field.parentElement.querySelector('.inline-field-error');
+                        if (m) m.remove();
+                        field.removeEventListener('change', clear);
+                    });
+                }
+            });
+            if (firstInvalid) firstInvalid.focus();
+        });
+    }
+
     // Client-side validation on student creation form
     const createStudentForm = document.getElementById('createStudentForm');
     if (createStudentForm) {
+        applyRedFieldValidation(createStudentForm);
+        // Additional format check for Student ID
         createStudentForm.addEventListener('submit', function (e) {
+            if (e.defaultPrevented) return; // already caught by required check above
             const sid = newStudentIdInput ? newStudentIdInput.value.trim() : '';
             if (!/^\d{4}-\d{5}$/.test(sid)) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Incomplete Student ID',
-                    html: 'Please enter a complete <strong>9-digit Student ID</strong>.<br><br>Format: <strong>4 digits - 5 digits</strong> (e.g. <code>2024-12345</code>)',
-                    confirmButtonColor: '#1e3a8a'
-                });
-                if (newStudentIdInput) newStudentIdInput.focus();
+                if (newStudentIdInput) {
+                    newStudentIdInput.style.borderColor = '#ef4444';
+                    newStudentIdInput.style.background  = '#fef2f2';
+                    const existingMsg = newStudentIdInput.parentElement.querySelector('.inline-field-error');
+                    if (!existingMsg) {
+                        const msg = document.createElement('span');
+                        msg.className = 'inline-field-error';
+                        msg.textContent = 'Format must be: 4 digits - 5 digits (e.g. 2024-12345)';
+                        msg.style.cssText = 'color:#ef4444;font-size:11px;display:block;margin-top:4px;font-weight:600;';
+                        newStudentIdInput.parentElement.appendChild(msg);
+                    }
+                    newStudentIdInput.focus();
+                }
                 return false;
             }
         });
     }
+
+    // Apply to other admin forms
+    applyRedFieldValidation(document.getElementById('assignFeeForm'));
+    applyRedFieldValidation(document.getElementById('categoryForm'));
 
     const assignFeeModal = document.getElementById('assignFeeModal');
     const btnOpenAssign = document.getElementById('btnOpenAssignFeeModal');

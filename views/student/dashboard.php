@@ -1853,10 +1853,64 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         });
     }
 
+
+    // ── Reusable red-field validation (replaces browser tooltip) ──────────────
+    function applyRedFieldValidation(form) {
+        if (!form) return;
+        form.setAttribute('novalidate', '');
+        form.addEventListener('submit', function (e) {
+            let firstInvalid = null;
+            form.querySelectorAll('[required]').forEach(function (field) {
+                field.style.borderColor = '';
+                field.style.background  = '';
+                const existingMsg = field.parentElement.querySelector('.inline-field-error');
+                if (existingMsg) existingMsg.remove();
+
+                const isEmpty = field.tagName === 'SELECT'
+                    ? field.value === '' || field.value === null
+                    : !field.value.trim();
+
+                if (isEmpty) {
+                    e.preventDefault();
+                    field.style.borderColor = '#ef4444';
+                    field.style.background  = '#fef2f2';
+
+                    const msg = document.createElement('span');
+                    msg.className  = 'inline-field-error';
+                    msg.textContent = 'This field is required.';
+                    msg.style.cssText = 'color:#ef4444;font-size:11px;display:block;margin-top:4px;font-weight:600;';
+                    field.parentElement.appendChild(msg);
+
+                    if (!firstInvalid) firstInvalid = field;
+
+                    field.addEventListener('input', function clear() {
+                        field.style.borderColor = '';
+                        field.style.background  = '';
+                        const m = field.parentElement.querySelector('.inline-field-error');
+                        if (m) m.remove();
+                        field.removeEventListener('input', clear);
+                    });
+                    field.addEventListener('change', function clear() {
+                        field.style.borderColor = '';
+                        field.style.background  = '';
+                        const m = field.parentElement.querySelector('.inline-field-error');
+                        if (m) m.remove();
+                        field.removeEventListener('change', clear);
+                    });
+                }
+            });
+            if (firstInvalid) firstInvalid.focus();
+        });
+    }
+
+    applyRedFieldValidation(document.getElementById('paymentForm'));
+    applyRedFieldValidation(document.getElementById('passwordForm'));
+
     // Form Validation (Prevent Overpayment)
     const paymentForm = document.getElementById('paymentForm');
     if (paymentForm) {
         paymentForm.addEventListener('submit', function (e) {
+            if (e.defaultPrevented) return;
             const enteredAmount = parseFloat(payAmountInput.value) || 0;
             if (enteredAmount <= 0) {
                 e.preventDefault();

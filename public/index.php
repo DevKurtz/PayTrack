@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
 }
 
 // Pull flash data for the view
-$error    = Auth::getFlash('error');
-$openRole = Auth::getFlash('open_role'); // re-open modal on error
+$error        = Auth::getFlash('error');
+$openRole     = Auth::getFlash('open_role');    // re-open modal on error
+$lastUsername = Auth::getFlash('last_username'); // restore typed username
 
 require_once __DIR__ . '/../views/auth/login.php';

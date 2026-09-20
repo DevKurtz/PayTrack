@@ -20,6 +20,7 @@ class AuthController
         if ($username === '' || $password === '') {
             Auth::setFlash('error', 'Please fill in all fields.');
             Auth::setFlash('open_role', $role);
+            Auth::setFlash('last_username', $username);
             redirect(APP_URL . '/public/');
         }
 
@@ -61,6 +62,7 @@ class AuthController
         if (!$user || !$isPasswordValid) {
             Auth::setFlash('error', 'Invalid username or password.');
             Auth::setFlash('open_role', $role);
+            Auth::setFlash('last_username', $username);
             redirect(APP_URL . '/public/');
         }
 

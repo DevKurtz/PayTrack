@@ -494,15 +494,60 @@
 
         // Show flash error if login fails
         const flashError = <?= json_encode($error) ?>;
-        const openRole = <?= json_encode($openRole) ?>;
+        const openRole   = <?= json_encode($openRole) ?>;
+        const lastUsername = <?= json_encode($lastUsername ?? '') ?>;
 
         if (flashError) {
             openModal(openRole || 'student');
+            // Restore the username the user had typed
+            if (lastUsername && inputUsername) {
+                inputUsername.value = lastUsername;
+            }
             Swal.fire({
                 icon: 'error',
                 title: 'Login Error',
                 text: flashError,
                 confirmButtonColor: '#18181b'
+            });
+        }
+
+        // ── Custom Required-Field Validation (red highlight instead of browser tooltip) ──
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.setAttribute('novalidate', '');
+            loginForm.addEventListener('submit', function (e) {
+                let firstInvalid = null;
+                loginForm.querySelectorAll('[required]').forEach(function (field) {
+                    // Clear previous error state
+                    field.style.borderColor = '';
+                    field.style.background  = '';
+                    const existingMsg = field.parentElement.querySelector('.inline-field-error');
+                    if (existingMsg) existingMsg.remove();
+
+                    if (!field.value.trim()) {
+                        e.preventDefault();
+                        field.style.borderColor = '#ef4444';
+                        field.style.background  = '#fef2f2';
+
+                        const msg = document.createElement('span');
+                        msg.className = 'inline-field-error';
+                        msg.textContent = 'This field is required.';
+                        msg.style.cssText = 'color:#ef4444;font-size:11.5px;display:block;margin-top:4px;font-weight:600;';
+                        field.parentElement.appendChild(msg);
+
+                        if (!firstInvalid) firstInvalid = field;
+
+                        // Remove error style once user starts typing
+                        field.addEventListener('input', function clear() {
+                            field.style.borderColor = '';
+                            field.style.background  = '';
+                            const m = field.parentElement.querySelector('.inline-field-error');
+                            if (m) m.remove();
+                            field.removeEventListener('input', clear);
+                        });
+                    }
+                });
+                if (firstInvalid) firstInvalid.focus();
             });
         }
     </script>
