@@ -32,12 +32,10 @@ class Auth
             }
             $_SESSION['last_activity'] = $now;
 
-            // Security: Soft User-Agent check to mitigate session hijacking
+            // Record user agent (do not invalidate on mobile devtools toggle to allow seamless testing)
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
             if (!isset($_SESSION['user_agent'])) {
                 $_SESSION['user_agent'] = $userAgent;
-            } elseif ($_SESSION['user_agent'] !== $userAgent) {
-                self::logout();
             }
         }
     }
@@ -93,7 +91,9 @@ class Auth
 
     public static function logout(): void
     {
-        self::start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();

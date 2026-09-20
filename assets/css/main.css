@@ -342,7 +342,10 @@ a {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 650px;
+}
+
+.panel table {
+  min-width: 600px;
 }
 
 thead tr {
@@ -607,7 +610,7 @@ tbody td {
 ══════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .mobile-menu-btn {
-    display: inline-flex;
+    display: inline-flex !important;
   }
 
   .sidebar {
@@ -615,11 +618,13 @@ tbody td {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 260px;
+    width: 270px;
     background: #ffffff;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    box-shadow: 6px 0 30px rgba(0,0,0,0.2);
     transform: translateX(-100%);
     padding: 20px 16px;
+    z-index: 1000 !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .sidebar.open {
@@ -628,26 +633,58 @@ tbody td {
 
   .sidebar-overlay.active {
     display: block;
+    z-index: 998;
   }
 
   .topbar {
     padding: 10px 14px;
-    gap: 8px;
+    gap: 10px;
+    justify-content: space-between;
   }
 
+  /* Admin & Student Topbar search adjustments */
   .search {
     max-width: 150px;
     padding: 6px 10px;
     min-width: 0;
+    flex: 1;
   }
-
   .search .kbd {
     display: none;
   }
 
-  /* Hide search on very small screens, only show icon */
+  .search-container {
+    max-width: 160px;
+    flex: 1;
+    min-width: 0;
+  }
+  .search-container input {
+    font-size: 11.5px;
+    padding-left: 28px;
+  }
+
   .topbar-actions {
     flex-shrink: 0;
+    gap: 8px !important;
+  }
+
+  /* Hide redundant elements in topbar on mobile */
+  .topbar-admin-badge,
+  .topbar #btnOpenCreateStudentModal,
+  .user-chip-meta .user-chip-id {
+    display: none !important;
+  }
+
+  .user-chip-container {
+    padding: 5px 8px !important;
+  }
+  .user-chip-name {
+    font-size: 12px;
+    max-width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
   }
 
   .content {
@@ -678,8 +715,10 @@ tbody td {
   }
 
   /* Table: allow horizontal scroll */
-  .panel {
+  .panel, .table-responsive {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 
   /* Buttons in page-head wrap */
@@ -698,6 +737,58 @@ tbody td {
 
   /* Receipt cards: single column */
   .receipt-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Student Portal Responsive Enhancements */
+  .portal-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .portal-page-title {
+    font-size: 20px !important;
+  }
+  .portal-page-sub {
+    font-size: 12px !important;
+  }
+  .btn-pay-now-main {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  .hero-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .card-box {
+    padding: 16px 16px !important;
+  }
+  .balance-huge-red {
+    font-size: 24px !important;
+  }
+
+  .motivation-hero-card {
+    padding: 16px !important;
+    min-height: auto !important;
+  }
+  .motivation-gfx-col svg {
+    display: none !important;
+  }
+  .floating-grad-badge {
+    display: none !important;
+  }
+  .motivation-quote-text {
+    font-size: 13.5px !important;
+  }
+
+  /* Official Receipt Modal */
+  #ncstPrintableReceipt {
+    padding: 18px 16px !important;
+  }
+  #ncstPrintableReceipt h1 {
+    font-size: 16px !important;
+  }
+  #ncstPrintableReceipt div[style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
 }

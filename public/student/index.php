@@ -15,8 +15,11 @@ Auth::requireRole('student');
 $userId = Auth::userId();
 $student = Student::findByUserId($userId);
 
-// Routing view: 'home' (default), 'fees', 'history', 'receipts', 'password'
+// Routing view: 'home' (default), 'fees', 'history', 'receipts'
 $currentView = $_GET['view'] ?? 'home';
+if ($currentView === 'password') {
+    redirect(APP_URL . '/public/student/?view=home');
+}
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

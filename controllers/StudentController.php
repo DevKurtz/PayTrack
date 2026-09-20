@@ -94,16 +94,7 @@ class StudentController
     public static function updatePassword(): void
     {
         Auth::requireRole('student');
-        verify_csrf();
-
-        $newPassword = $_POST['new_password'] ?? '';
-        if (strlen($newPassword) < 6) {
-            Auth::setFlash('error', 'Password must be at least 6 characters.');
-            redirect(APP_URL . '/public/student/');
-        }
-
-        User::updatePassword(Auth::userId(), $newPassword);
-        Auth::setFlash('success', 'Password successfully updated.');
+        Auth::setFlash('error', 'Password changes are disabled for students. Your login password is your Last Name, shared with your parents for tuition monitoring.');
         redirect(APP_URL . '/public/student/');
     }
 }

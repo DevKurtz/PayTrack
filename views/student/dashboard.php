@@ -1,7 +1,7 @@
 <?php
 /**
  * PayTrack — Student Portal
- * Multi-Page View Routing: 'fees' (Tuition & Assessment), 'history' (Payment History), 'password' (Account Security)
+ * Multi-Page View Routing: 'home' (Overview), 'fees' (Tuition & Assessment), 'history' (Payment History), 'receipts' (Official Receipts)
  * Preserves the client-approved light sidebar with active link indicators
  */
 $studentName = $student ? ($student['first_name'] . ' ' . $student['last_name']) : 'Student';
@@ -107,31 +107,249 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             color: #64748b;
         }
 
+        .notif-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
         .notif-bell-btn {
             position: relative;
-            background: none;
-            border: none;
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             cursor: pointer;
-            padding: 6px;
             color: #475569;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            transition: background 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            outline: none;
+            user-select: none;
         }
         .notif-bell-btn:hover {
-            background: #f1f5f9;
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #0b3d2e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+        }
+        .notif-bell-btn:hover svg {
+            transform: scale(1.1) rotate(12deg);
+            stroke: #0b3d2e;
+        }
+        .notif-bell-btn:active {
+            transform: translateY(0) scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .notif-bell-btn.active {
+            background: #0b3d2e;
+            border-color: #0b3d2e;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(11, 61, 46, 0.25);
+        }
+        .notif-bell-btn.active svg {
+            stroke: #ffffff;
+        }
+        .notif-bell-btn svg {
+            transition: transform 0.2s ease, stroke 0.2s ease;
         }
         .notif-dot-red {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 7px;
-            height: 7px;
+            top: 7px;
+            right: 7px;
+            width: 9px;
+            height: 9px;
             background: #ef4444;
             border-radius: 50%;
-            border: 1.5px solid #ffffff;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.35);
+            animation: notifDotPulse 2s infinite ease-in-out;
+        }
+        @keyframes notifDotPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.25); opacity: 0.85; }
+        }
+
+        /* Notification Dropdown Menu */
+        .notif-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 380px;
+            max-width: calc(100vw - 24px);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.16), 0 6px 14px -2px rgba(15, 23, 42, 0.08);
+            z-index: 1050;
+            overflow: hidden;
+            display: none;
+            transform-origin: top right;
+            animation: notifDropdownPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes notifDropdownPop {
+            0% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .notif-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #0f172a;
+        }
+        .notif-header-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: #0b3d2e;
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .notif-btn-clear {
+            background: transparent;
+            border: none;
+            color: #059669;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+        .notif-btn-clear:hover {
+            background: #ecfdf5;
+            color: #0b3d2e;
+            text-decoration: underline;
+        }
+        .notif-list-body {
+            max-height: 380px;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .notif-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s ease;
+            position: relative;
+        }
+        .notif-row:hover {
+            background: #f8fafc;
+        }
+        .notif-row.unread {
+            background: #f0fdf4;
+        }
+        .notif-row.unread:hover {
+            background: #e6f9ed;
+        }
+        .notif-icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .notif-icon-circle.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .notif-icon-circle.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .notif-icon-circle.info {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .notif-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .notif-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+        .notif-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.45;
+            margin-bottom: 4px;
+        }
+        .notif-meta-time {
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .notif-item-pill {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+        .notif-empty-state {
+            padding: 36px 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+        .notif-footer {
+            padding: 10px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .notif-footer a {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0b3d2e;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .notif-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .notif-dropdown-menu {
+                position: fixed;
+                top: 64px;
+                left: 12px;
+                right: 12px;
+                width: auto;
+                max-width: none;
+                border-radius: 12px;
+            }
         }
 
         .user-chip-container {
@@ -439,8 +657,10 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
 
         /* Clean Styled Table */
         .styled-fintech-table {
-            width: 100%;
+            width: 100% !important;
+            min-width: 0 !important;
             border-collapse: collapse;
+            table-layout: auto;
         }
         .styled-fintech-table thead tr {
             background: #f8fafc;
@@ -453,7 +673,8 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 11px 16px;
+            padding: 10px 12px;
+            white-space: nowrap;
         }
         .styled-fintech-table tbody tr {
             border-bottom: 1px solid #f1f5f9;
@@ -463,10 +684,11 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             background: #fbfcfe;
         }
         .styled-fintech-table tbody td {
-            padding: 13px 16px;
+            padding: 11px 12px;
             font-size: 13px;
             color: #1e293b;
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         /* Aspect Item Icons */
@@ -704,8 +926,8 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         }
         /* ── Mobile Responsive ── */
         @media (max-width: 768px) {
-            .portal-header-row { gap: 8px; flex-wrap: wrap; }
-            .search-container { max-width: 140px; }
+            .portal-header-row { gap: 12px; flex-direction: column; align-items: flex-start; }
+            .search-container { max-width: 150px; }
             .search-container input { font-size: 11.5px; }
 
             .metrics-grid-3 { grid-template-columns: 1fr 1fr; }
@@ -715,16 +937,35 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             .section-box-header { flex-wrap: wrap; gap: 8px; }
 
             /* Pay tuition button full-width on small screens */
-            .btn-pay-now { width: 100% !important; justify-content: center; }
+            .btn-pay-now-main { width: 100% !important; justify-content: center; }
 
             /* Receipt cards: ensure single col */
             .receipt-cards-grid { grid-template-columns: 1fr !important; }
+
+            /* Styled fintech table: compact on mobile */
+            .styled-fintech-table thead th {
+                padding: 8px 8px;
+                font-size: 10px;
+            }
+            .styled-fintech-table tbody td {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+            .btn-view-receipt-outline {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
         }
 
         @media (max-width: 480px) {
             .metrics-grid-3 { grid-template-columns: 1fr; }
             .search-container { max-width: 110px; }
-            .portal-header-row h1 { font-size: 15px; }
+            .portal-page-title { font-size: 18px !important; }
+            /* Hide method column in recent payments on tiny screens to avoid scroll */
+            .styled-fintech-table th:nth-child(3),
+            .styled-fintech-table td:nth-child(3) {
+                display: none;
+            }
         }
 
     </style>
@@ -769,11 +1010,6 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                     <span class="badge-count"><?= count($payments) ?></span>
                 </a>
             </li>
-            <li>
-                <a href="<?= APP_URL ?>/public/student/?view=password" class="nav-item <?= $currentView === 'password' ? 'active' : '' ?>">
-                    <span class="ic">&#128273;</span> Change Password
-                </a>
-            </li>
         </ul>
 
         <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #e2e8f0;">
@@ -791,7 +1027,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     <!-- Main Content Area -->
     <div class="main">
         <!-- Topbar -->
-        <header class="topbar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 28px;">
+        <header class="topbar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
             <button class="mobile-menu-btn" id="btnOpenSidebar" aria-label="Toggle Navigation">&#9776;</button>
 
             <!-- Search Bar -->
@@ -805,14 +1041,136 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             </div>
 
             <!-- Topbar Right Profile & Notif Actions -->
-            <div class="topbar-actions" style="display: flex; align-items: center; gap: 16px;">
-                <button class="notif-bell-btn" aria-label="Notifications" title="Notifications">
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span class="notif-dot-red"></span>
-                </button>
+            <div class="topbar-actions" style="display: flex; align-items: center; gap: 12px;">
+                <?php
+                // Generate Dynamic Student Notifications
+                $studentNotifs = [];
+
+                // 1. Recent Payments
+                if (!empty($payments)) {
+                    foreach (array_slice($payments, 0, 2) as $p) {
+                        $studentNotifs[] = [
+                            'type' => 'success',
+                            'icon' => '🧾',
+                            'title' => 'Payment Verified (OR# ' . $p['or_number'] . ')',
+                            'desc' => 'Payment of ' . peso($p['amount']) . ' via ' . strtoupper($p['payment_method']) . ' has been recorded.',
+                            'time' => date('M d, Y h:i A', strtotime($p['created_at'] ?? 'now')),
+                            'link' => APP_URL . '/public/student/?view=receipt&or=' . urlencode($p['or_number']),
+                            'unread' => true,
+                        ];
+                    }
+                }
+
+                // 2. Outstanding or Cleared Tuition Assessment
+                if ($totalRemaining > 0) {
+                    $studentNotifs[] = [
+                        'type' => 'warning',
+                        'icon' => '💳',
+                        'title' => 'Outstanding Tuition Assessment',
+                        'desc' => 'You have a remaining balance of ' . peso($totalRemaining) . '. Pay online or review your breakdown.',
+                        'time' => 'Active Term Notice',
+                        'link' => APP_URL . '/public/student/?view=fees',
+                        'unread' => true,
+                    ];
+                } else {
+                    $studentNotifs[] = [
+                        'type' => 'success',
+                        'icon' => '🎉',
+                        'title' => 'Tuition Fully Cleared',
+                        'desc' => 'Great news! All tuition assessments for the active academic period are settled.',
+                        'time' => 'Account Status',
+                        'link' => APP_URL . '/public/student/?view=fees',
+                        'unread' => false,
+                    ];
+                }
+
+                // 3. Official Clearance Advisory
+                $studentNotifs[] = [
+                    'type' => 'info',
+                    'icon' => '📢',
+                    'title' => 'Exam Clearance & Official Receipts',
+                    'desc' => 'Official electronic receipts are recognized institutional proofs for exam permit validation.',
+                    'time' => 'Registrar Notice',
+                    'link' => APP_URL . '/public/student/?view=receipts',
+                    'unread' => false,
+                ];
+
+                // 4. Shared Password Info
+                $studentNotifs[] = [
+                    'type' => 'info',
+                    'icon' => '🛡️',
+                    'title' => 'Student & Parent Access Note',
+                    'desc' => 'Your login password is permanently linked to your Last Name for shared parent tuition monitoring.',
+                    'time' => 'Policy Advisory',
+                    'link' => '#',
+                    'unread' => false,
+                ];
+
+                $unreadCount = 0;
+                foreach ($studentNotifs as $nItem) {
+                    if (!empty($nItem['unread'])) $unreadCount++;
+                }
+                ?>
+
+                <div class="notif-wrapper">
+                    <button type="button" class="notif-bell-btn" id="btnStudentNotif" aria-label="Notifications" title="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <?php if ($unreadCount > 0): ?>
+                            <span class="notif-dot-red" id="notifDotBadge"></span>
+                        <?php endif; ?>
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <div class="notif-dropdown-menu" id="notifDropdownMenu" role="region" aria-label="Notifications">
+                        <div class="notif-header">
+                            <div class="notif-header-title">
+                                <span>🔔 Notifications</span>
+                                <span class="notif-header-badge" id="notifBadgeCount"><?= $unreadCount ?> new</span>
+                            </div>
+                            <?php if ($unreadCount > 0): ?>
+                                <button type="button" class="notif-btn-clear" id="btnMarkAllRead">Mark all as read</button>
+                            <?php endif; ?>
+                        </div>
+
+                        <ul class="notif-list-body">
+                            <?php if (empty($studentNotifs)): ?>
+                                <li class="notif-empty-state">
+                                    <div style="font-size: 26px; margin-bottom: 6px;">📭</div>
+                                    <p style="margin: 0;">No notifications found.</p>
+                                </li>
+                            <?php else: ?>
+                                <?php foreach ($studentNotifs as $notif): ?>
+                                    <li>
+                                        <a href="<?= e($notif['link']) ?>" class="notif-row <?= !empty($notif['unread']) ? 'unread' : '' ?>">
+                                            <div class="notif-icon-circle <?= e($notif['type']) ?>">
+                                                <?= $notif['icon'] ?>
+                                            </div>
+                                            <div class="notif-text">
+                                                <div class="notif-title"><?= e($notif['title']) ?></div>
+                                                <div class="notif-desc"><?= e($notif['desc']) ?></div>
+                                                <div class="notif-meta-time">
+                                                    <span>🕒</span> <?= e($notif['time']) ?>
+                                                </div>
+                                            </div>
+                                            <?php if (!empty($notif['unread'])): ?>
+                                                <span class="notif-item-pill"></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+
+                        <div class="notif-footer">
+                            <a href="<?= APP_URL ?>/public/student/?view=receipts">
+                                <span>View all Official Receipts</span> &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="user-chip-container" style="padding: 6px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <div class="user-chip-meta">
@@ -837,7 +1195,7 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         <?php endif; ?>
 
         <!-- Content Area -->
-        <main class="content" style="padding: 24px 28px;">
+        <main class="content">
 
             <!-- ============================================== -->
             <!-- VIEW 0: STUDENT HOME / OVERVIEW               -->
@@ -984,9 +1342,6 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                                 </a>
                                 <a href="<?= APP_URL ?>/public/student/?view=history" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
                                     <span>📜</span> Complete Payment History Ledger
-                                </a>
-                                <a href="<?= APP_URL ?>/public/student/?view=password" class="btn" style="justify-content: flex-start; gap: 8px; width: 100%;">
-                                    <span>🔑</span> Security &amp; Password Settings
                                 </a>
                             </div>
                         </div>
@@ -1501,49 +1856,6 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                         </div>
                     <?php endif; ?>
                 </div>
-
-            <!-- ============================================== -->
-            <!-- VIEW 3: DEDICATED CHANGE PASSWORD PAGE         -->
-            <!-- ============================================== -->
-            <?php elseif ($currentView === 'password'): ?>
-                <div class="portal-header-row">
-                    <div class="portal-title-flex">
-                        <div class="wallet-icon-box" style="background: #fef3c7; color: #b45309;">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 class="portal-page-title">Account Security &amp; Password</h1>
-                            <p class="portal-page-sub">Update your student portal login password to keep your account secure.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-box" style="max-width: 480px;">
-                    <form method="POST" action="<?= APP_URL ?>/public/student/?view=password">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="change_password">
-
-                        <div class="form-group" style="margin-bottom: 16px;">
-                            <label class="form-label" for="pageNewPassword" style="font-weight: 700; font-size: 13px;">New Password *</label>
-                            <div style="position: relative;">
-                                <input type="password" class="form-control" name="new_password" id="pageNewPassword" required minlength="6" placeholder="Minimum 6 characters" style="padding-right: 42px;">
-                                <button type="button" id="btnTogglePagePassword" title="Show/Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 16px; padding: 4px 6px; display: flex; align-items: center; justify-content: center; line-height: 1;">
-                                    👁️
-                                </button>
-                            </div>
-                            <small style="color: #64748b; font-size: 11.5px; margin-top: 4px; display: block;">Use a strong combination of letters, numbers, and symbols.</small>
-                        </div>
-
-                        <div style="margin-top: 20px;">
-                            <button type="submit" class="btn dark" style="padding: 10px 24px;">
-                                Update Password
-                            </button>
-                        </div>
-                    </form>
-                </div>
             <?php endif; ?>
 
         </main>
@@ -1756,18 +2068,26 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     const btnCloseSidebar = document.getElementById('btnCloseSidebar');
 
     function openSidebar() {
-        sidebar.classList.add('open');
-        overlay.classList.add('active');
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     function closeSidebar() {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
     }
 
     if (btnOpenSidebar) btnOpenSidebar.addEventListener('click', openSidebar);
     if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
     if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    if (sidebar) {
+        sidebar.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+    }
 
     // ── Payment Modal Logic ───────────────────────────────────
     const paymentModal = document.getElementById('paymentInputModal');
@@ -1807,15 +2127,64 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
         payAmountInput.value = Math.min(5000, currentRemaining).toFixed(2);
     });
 
-    // ── Password Eye Toggle in Page Form ──────────────────────
-    const btnTogglePagePassword = document.getElementById('btnTogglePagePassword');
-    const pageNewPasswordInput = document.getElementById('pageNewPassword');
-    if (btnTogglePagePassword && pageNewPasswordInput) {
-        btnTogglePagePassword.addEventListener('click', () => {
-            const isPassword = pageNewPasswordInput.getAttribute('type') === 'password';
-            pageNewPasswordInput.setAttribute('type', isPassword ? 'text' : 'password');
-            btnTogglePagePassword.textContent = isPassword ? '🙈' : '👁️';
-            btnTogglePagePassword.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+    // ── Student Notifications Dropdown Interaction ───────────
+    const btnStudentNotif = document.getElementById('btnStudentNotif');
+    const notifDropdownMenu = document.getElementById('notifDropdownMenu');
+    const notifDotBadge = document.getElementById('notifDotBadge');
+    const btnMarkAllRead = document.getElementById('btnMarkAllRead');
+
+    if (btnStudentNotif && notifDropdownMenu) {
+        btnStudentNotif.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isShown = notifDropdownMenu.style.display === 'block';
+            if (isShown) {
+                notifDropdownMenu.style.display = 'none';
+                btnStudentNotif.classList.remove('active');
+            } else {
+                notifDropdownMenu.style.display = 'block';
+                btnStudentNotif.classList.add('active');
+                // Diminish / hide red unread dot badge upon checking notifications
+                if (notifDotBadge) {
+                    notifDotBadge.style.opacity = '0.3';
+                }
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notifDropdownMenu.contains(e.target) && !btnStudentNotif.contains(e.target)) {
+                notifDropdownMenu.style.display = 'none';
+                btnStudentNotif.classList.remove('active');
+            }
+        });
+
+        // Close dropdown on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && notifDropdownMenu.style.display === 'block') {
+                notifDropdownMenu.style.display = 'none';
+                btnStudentNotif.classList.remove('active');
+            }
+        });
+    }
+
+    if (btnMarkAllRead) {
+        btnMarkAllRead.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('.notif-row.unread').forEach(function(row) {
+                row.classList.remove('unread');
+            });
+            document.querySelectorAll('.notif-item-pill').forEach(function(pill) {
+                pill.remove();
+            });
+            const badgeCount = document.getElementById('notifBadgeCount');
+            if (badgeCount) {
+                badgeCount.textContent = '0 new';
+                badgeCount.style.background = '#94a3b8';
+            }
+            if (notifDotBadge) {
+                notifDotBadge.remove();
+            }
+            btnMarkAllRead.style.display = 'none';
         });
     }
 
@@ -1929,7 +2298,6 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     }
 
     applyRedFieldValidation(document.getElementById('paymentForm'));
-    applyRedFieldValidation(document.getElementById('passwordForm'));
 
     // Form Validation (Prevent Overpayment)
     const paymentForm = document.getElementById('paymentForm');
