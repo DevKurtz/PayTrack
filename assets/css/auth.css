@@ -125,6 +125,37 @@ body.landing-body {
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
+.btn-ic {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.btn-ic-arrow {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition: transform 0.15s ease;
+}
+
+.btn-header-login:hover .btn-ic-arrow,
+.btn-primary-green:hover .btn-ic-arrow {
+  transform: translateX(3px);
+}
+
+.check-svg {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.benefit-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* ── Hero Section ── */
 .hero-section {
   padding: 60px 0 80px;

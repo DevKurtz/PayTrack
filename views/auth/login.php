@@ -34,7 +34,9 @@
             <!-- Desktop Button & Mobile Hamburger Toggle -->
             <div style="display: flex; align-items: center; gap: 10px;">
                 <button class="btn-header-login btn-desktop-login" id="btnHeaderLogin">
-                    Login / Portal <span>&rarr;</span>
+                    <svg class="btn-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    <span>Login / Portal</span>
+                    <svg class="btn-ic-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
                 <button class="nav-hamburger" id="btnNavToggle" aria-label="Open navigation menu">
                     <span></span><span></span><span></span>
@@ -94,8 +96,8 @@
                 <!-- Left Content -->
                 <div>
                     <div class="hero-tag">
-                        <span class="hero-tag-dot"></span>
-                        Smart Payment Management
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Smart Payment Management</span>
                     </div>
 
                     <h1 class="hero-title">
@@ -108,20 +110,28 @@
 
                     <div class="hero-cta-group">
                         <button class="btn-primary-green" id="btnHeroGetStarted">
-                            Get started <span>&rarr;</span>
+                            <svg class="btn-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            <span>Get started</span>
+                            <svg class="btn-ic-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </button>
-                        <a href="#features" class="btn-outline">Learn more</a>
+                        <a href="#features" class="btn-outline">
+                            <svg class="btn-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span>Learn more</span>
+                        </a>
                     </div>
 
                     <div class="hero-checklist">
                         <div class="check-item">
-                            <span class="check-ic">&#10004;</span> Secure Payments
+                            <svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span>Secure Payments</span>
                         </div>
                         <div class="check-item">
-                            <span class="check-ic">&#10004;</span> Real-time Updates
+                            <svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>Real-time Updates</span>
                         </div>
                         <div class="check-item">
-                            <span class="check-ic">&#10004;</span> Easy to Use
+                            <svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <span>Easy to Use</span>
                         </div>
                     </div>
                 </div>
@@ -219,28 +229,36 @@
 
             <div class="features-grid">
                 <div class="feature-box">
-                    <div class="feature-icon-badge icon-green">&#129658;</div>
+                    <div class="feature-icon-badge icon-green">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    </div>
                     <h3 class="feature-box-title">Instant Account Creation</h3>
                     <p class="feature-box-desc">Real-time access to student accounts, default credentials, and balance breakdown.</p>
                     <span class="feature-arrow">&rarr;</span>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-icon-badge icon-blue">&#128179;</div>
+                    <div class="feature-icon-badge icon-blue">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </div>
                     <h3 class="feature-box-title">Online Payment</h3>
                     <p class="feature-box-desc">Direct, secure fee payments using bank cards, GCash, or digital methods.</p>
                     <span class="feature-arrow">&rarr;</span>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-icon-badge icon-yellow">&#128276;</div>
+                    <div class="feature-icon-badge icon-yellow">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
                     <h3 class="feature-box-title">Parental Email Notifications</h3>
                     <p class="feature-box-desc">Automatic alerts for fees, dues, payments, and balances sent directly to parents.</p>
                     <span class="feature-arrow">&rarr;</span>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-icon-badge icon-purple">&#128737;</div>
+                    <div class="feature-icon-badge icon-purple">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
                     <h3 class="feature-box-title">Secure &amp; Reliable</h3>
                     <p class="feature-box-desc">Your financial data is protected with industry-standard encryption and safety.</p>
                     <span class="feature-arrow">&rarr;</span>
@@ -255,8 +273,8 @@
             <div class="why-grid">
                 <div class="why-image-card">
                     <div style="background: #f1f5f9; border-radius: 12px; padding: 24px; text-align: center;">
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px;">
-                            &#10004;
+                        <div style="width: 52px; height: 52px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.28);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
                         <h4 style="font-size: 18px; font-weight: 700; margin: 0 0 6px;">100% Automated Workflow</h4>
                         <p style="font-size: 13px; color: #64748b; margin: 0;">Instant Official Receipts &amp; Real-time Verification</p>
@@ -272,16 +290,28 @@
 
                     <ul class="why-benefit-list">
                         <li class="why-benefit-item">
-                            <span style="color: #10b981;">&#10004;</span> Save time with online payments
+                            <span class="benefit-check-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </span>
+                            <span>Save time with online payments</span>
                         </li>
                         <li class="why-benefit-item">
-                            <span style="color: #10b981;">&#10004;</span> Get real-time updates and notifications
+                            <span class="benefit-check-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            </span>
+                            <span>Get real-time updates and notifications</span>
                         </li>
                         <li class="why-benefit-item">
-                            <span style="color: #10b981;">&#10004;</span> Accessible anytime, anywhere
+                            <span class="benefit-check-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                            </span>
+                            <span>Accessible anytime, anywhere</span>
                         </li>
                         <li class="why-benefit-item">
-                            <span style="color: #10b981;">&#10004;</span> Trusted by students, parents, and schools
+                            <span class="benefit-check-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </span>
+                            <span>Trusted by students, parents, and schools</span>
                         </li>
                     </ul>
                 </div>
@@ -302,7 +332,9 @@
                 <div class="step-card">
                     <div class="step-num">1</div>
                     <div>
-                        <div class="step-icon-box">&#128100;</div>
+                        <div class="step-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
                         <h4 class="step-title">Create Your Account</h4>
                         <p class="step-desc">Sign up as a student or parent in just a few minutes using school ID.</p>
                     </div>
@@ -311,7 +343,9 @@
                 <div class="step-card">
                     <div class="step-num">2</div>
                     <div>
-                        <div class="step-icon-box">&#128179;</div>
+                        <div class="step-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        </div>
                         <h4 class="step-title">Add a Payment Method</h4>
                         <p class="step-desc">Link your bank card, e-wallet, or preferred online payment option.</p>
                     </div>
@@ -320,7 +354,9 @@
                 <div class="step-card">
                     <div class="step-num">3</div>
                     <div>
-                        <div class="step-icon-box">&#9989;</div>
+                        <div class="step-icon-box" style="background: #ecfdf5; color: #059669;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
                         <h4 class="step-title">Start Managing Fees</h4>
                         <p class="step-desc">View balances, make payments, and get notified instantly via email.</p>
                     </div>
@@ -391,7 +427,9 @@
                     <div class="footer-cta-title">Ready to Get Started?</div>
                     <div class="footer-cta-sub">Join thousands of students and parents who already trust PayTrack.</div>
                     <button class="btn-primary-green" id="btnFooterGetStarted">
-                        Get started <span>&rarr;</span>
+                        <svg class="btn-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Get started</span>
+                        <svg class="btn-ic-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </button>
                 </div>
             </div>
@@ -452,7 +490,10 @@
                 </div>
 
                 <div style="margin-top: 24px;">
-                    <button type="submit" class="btn-signin-submit">Sign In</button>
+                    <button type="submit" class="btn-signin-submit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Sign In</span>
+                    </button>
                 </div>
 
                 <!-- Role switcher text link -->
