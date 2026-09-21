@@ -21,14 +21,19 @@ DROP TABLE IF EXISTS `users`;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ------------------------------------------------------------
--- 1. USERS (admin + student login accounts)
+-- 1. USERS (admin + accounting + student login accounts)
 -- ------------------------------------------------------------
 CREATE TABLE `users` (
   `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   `username`         VARCHAR(100)     NOT NULL UNIQUE,
+  `name`             VARCHAR(100)     NULL,
+  `email`            VARCHAR(150)     NULL,
   `password_hash`    VARCHAR(255)     NOT NULL,
-  `role`             ENUM('admin','student') NOT NULL DEFAULT 'student',
+  `role`             ENUM('admin','accounting','student') NOT NULL DEFAULT 'student',
   `is_first_login`   TINYINT(1)       NOT NULL DEFAULT 1,
+  `status`           ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active',
+  `last_login_at`    DATETIME         NULL,
+  `last_active_at`   DATETIME         NULL,
   `created_at`       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -143,7 +148,7 @@ CREATE TABLE `email_logs` (
   `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   `recipient_email`  VARCHAR(150)     NOT NULL,
   `subject`          VARCHAR(255)     NOT NULL,
-  `type`             ENUM('account_created','payment_confirmation','payment_reminder','other') NOT NULL,
+  `type`             ENUM('account_created','accounting_account_created','new_student_accounting_alert','tuition_assessed','payment_confirmation','payment_reminder','other') NOT NULL,
   `related_id`       INT UNSIGNED     NULL,
   `status`           ENUM('sent','failed') NOT NULL DEFAULT 'sent',
   `error_message`    TEXT             NULL,

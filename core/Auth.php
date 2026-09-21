@@ -37,6 +37,19 @@ class Auth
             if (!isset($_SESSION['user_agent'])) {
                 $_SESSION['user_agent'] = $userAgent;
             }
+
+            // Real-time online activity tracking in DB (throttled to every 30s)
+            if (!isset($_SESSION['last_db_active']) || ($now - $_SESSION['last_db_active'] > 30)) {
+                $_SESSION['last_db_active'] = $now;
+                try {
+                    require_once __DIR__ . '/../config/database.php';
+                    $db = Database::getInstance();
+                    $stmt = $db->prepare('UPDATE users SET last_active_at = NOW() WHERE id = ?');
+                    $stmt->execute([self::userId()]);
+                } catch (Exception $e) {
+                    // Fail silently
+                }
+            }
         }
     }
 
@@ -83,6 +96,8 @@ class Auth
 
         if (self::role() === 'admin') {
             header('Location: ' . APP_URL . '/public/admin/');
+        } elseif (self::role() === 'accounting') {
+            header('Location: ' . APP_URL . '/public/accounting/');
         } else {
             header('Location: ' . APP_URL . '/public/student/');
         }

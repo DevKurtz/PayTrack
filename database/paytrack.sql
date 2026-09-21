@@ -29,9 +29,14 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   `username`         VARCHAR(100)     NOT NULL UNIQUE,
+  `name`             VARCHAR(100)     NULL,
+  `email`            VARCHAR(150)     NULL,
   `password_hash`    VARCHAR(255)     NOT NULL,
-  `role`             ENUM('admin','student') NOT NULL DEFAULT 'student',
+  `role`             ENUM('admin','accounting','student') NOT NULL DEFAULT 'student',
   `is_first_login`   TINYINT(1)       NOT NULL DEFAULT 1,
+  `status`           ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active',
+  `last_login_at`    DATETIME         NULL,
+  `last_active_at`   DATETIME         NULL,
   `created_at`       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -145,7 +150,7 @@ CREATE TABLE `email_logs` (
   `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   `recipient_email`  VARCHAR(150)     NOT NULL,
   `subject`          VARCHAR(255)     NOT NULL,
-  `type`             ENUM('account_created','payment_confirmation','payment_reminder','other') NOT NULL,
+  `type`             ENUM('account_created','accounting_account_created','new_student_accounting_alert','tuition_assessed','payment_confirmation','payment_reminder','other') NOT NULL,
   `related_id`       INT UNSIGNED     NULL,
   `status`           ENUM('sent','failed') NOT NULL DEFAULT 'sent',
   `error_message`    TEXT             NULL,
@@ -166,14 +171,18 @@ CREATE INDEX `idx_payments_or`          ON `payments`          (`or_number`);
 -- ============================================================
 
 -- 1. Default Admin Account (Username: admin | Password: admin123)
-INSERT INTO `users` (`id`, `username`, `password_hash`, `role`, `is_first_login`) VALUES
-(1, 'admin', '$2y$10$jJBca9GtHWFBVFnZkqsIduuOLLnX.4fX2ZcTTijQ4ljIiNHmtVauW', 'admin', 0);
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(1, 'admin', 'System Administrator', 'admin@paytrack.edu.ph', '$2y$10$jJBca9GtHWFBVFnZkqsIduuOLLnX.4fX2ZcTTijQ4ljIiNHmtVauW', 'admin', 0, 'active', NOW());
 
--- 2. Default Student Account (Username: 2023-53512 | Password: DELACRUZ)
-INSERT INTO `users` (`id`, `username`, `password_hash`, `role`, `is_first_login`) VALUES
-(2, '2023-53512', '$2y$10$9kCOdWJNylQsuxeo.VBb9OxBN7TCfgsF03uXEtq3xSWgJFihb1GpW', 'student', 1);
+-- 2. Default Accounting Staff (Username: accounting | Password: accounting123)
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(2, 'accounting', 'Accounting Office', 'accounting@paytrack.edu.ph', '$2y$10$iI0T6iO6pZ6sB0T6x9zGquxMqv3l2Y4V5S/x7l4I7K4b.dF0H9.W.', 'accounting', 0, 'active', NOW());
 
--- 3. Default Fee Categories (Fixed total: ₱4,950 | Variable: Subject Units)
+-- 3. Default Student Account (Username: 2023-53512 | Password: DELACRUZ)
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(3, '2023-53512', 'Juan Dela Cruz', 'juan.delacruz@email.com', '$2y$10$9kCOdWJNylQsuxeo.VBb9OxBN7TCfgsF03uXEtq3xSWgJFihb1GpW', 'student', 1, 'active', NOW());
+
+-- 4. Default Fee Categories (Fixed total: ₱4,950 | Variable: Subject Units)
 INSERT INTO `fee_categories` (`id`, `name`, `code`, `default_amount`, `is_variable`, `sort_order`, `is_active`) VALUES
 (1, 'Registration & Matriculation Fee', 'reg', 650.00, 0, 1, 1),
 (2, 'LMS & E-Learning Platform Fee', 'lms', 500.00, 0, 2, 1),
@@ -184,13 +193,13 @@ INSERT INTO `fee_categories` (`id`, `name`, `code`, `default_amount`, `is_variab
 (7, 'Miscellaneous & Development Fee', 'misc', 1500.00, 0, 7, 1),
 (8, 'Subject Units & Academic Tuition', 'subject', 0.00, 1, 8, 1);
 
--- 4. Sample Student Profile (Juan Dela Cruz)
+-- 5. Sample Student Profile (Juan Dela Cruz)
 INSERT INTO `students`
   (`id`, `user_id`, `student_id`, `first_name`, `last_name`, `middle_name`,
    `email`, `grade_level`, `school_year`,
    `parent_name`, `parent_email`, `contact_number`)
 VALUES
-  (1, 2, '2023-53512', 'Juan', 'Dela Cruz', 'Santos',
+  (1, 3, '2023-53512', 'Juan', 'Dela Cruz', 'Santos',
    'juan.delacruz@email.com', 'Grade 11 - STEM', '2024-2025',
    'Maria Dela Cruz', 'maria.delacruz@email.com', '09171234567');
 

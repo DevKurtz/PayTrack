@@ -66,22 +66,13 @@
                 <li><a href="#about" class="mobile-nav-item" onclick="closeMobileDrawer()"><span class="m-icon">ℹ️</span> About PayTrack</a></li>
             </ul>
 
-            <div class="mobile-section-label" style="margin-top: 26px;">Select Login Portal</div>
+            <div class="mobile-section-label" style="margin-top: 26px;">Account Access</div>
             <div class="mobile-portal-cards">
-                <button type="button" class="mobile-portal-card student-card" onclick="openPortalFromNav('student')">
-                    <div class="mp-icon">🎓</div>
+                <button type="button" class="mobile-portal-card student-card" onclick="openPortalFromNav()">
+                    <div class="mp-icon">🔐</div>
                     <div class="mp-details">
-                        <div class="mp-title">Student Portal</div>
-                        <div class="mp-desc">Sign in with Student ID & password</div>
-                    </div>
-                    <div class="mp-arrow">&rarr;</div>
-                </button>
-
-                <button type="button" class="mobile-portal-card admin-card" onclick="openPortalFromNav('admin')">
-                    <div class="mp-icon">🛡️</div>
-                    <div class="mp-details">
-                        <div class="mp-title">Administrator Portal</div>
-                        <div class="mp-desc">Sign in with Admin credentials</div>
+                        <div class="mp-title">Sign In to PayTrack</div>
+                        <div class="mp-desc">Access your student</div>
                     </div>
                     <div class="mp-arrow">&rarr;</div>
                 </button>
@@ -451,28 +442,18 @@
             <button class="modal-close-x" id="btnCloseLoginModal" aria-label="Close">&times;</button>
 
             <!-- Segmented Role Selector Tabs (Clear Options Right Up Front) -->
-            <div class="modal-role-tabs">
-                <button type="button" class="modal-role-tab active" id="tabRoleStudent" onclick="applyRole('student')">
-                    <span class="mrt-icon">🎓</span> Student / Parent
-                </button>
-                <button type="button" class="modal-role-tab" id="tabRoleAdmin" onclick="applyRole('admin')">
-                    <span class="mrt-icon">🛡️</span> Administrator
-                </button>
-            </div>
-            
-            <div class="modal-header-box">
-                <div class="modal-header-icon" id="modalHeaderIcon">🎓</div>
-                <h2 class="modal-header-title" id="loginModalTitle">Student / Parent Sign In</h2>
-                <p class="modal-header-sub" id="loginModalSub">Enter your Student ID and password to access your portal</p>
+            <div class="modal-header-box" style="margin-top: 8px;">
+                <div class="modal-header-icon" id="modalHeaderIcon" style="background: #ecfdf5; color: #0b3d2e;">🔐</div>
+                <h2 class="modal-header-title" id="loginModalTitle">Sign In to PayTrack</h2>
+                <p class="modal-header-sub" id="loginModalSub">Enter your Account ID or username and password</p>
             </div>
 
             <form method="POST" action="<?= APP_URL ?>/public/" id="loginForm">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="login">
-                <input type="hidden" name="role" id="loginRoleInput" value="student">
 
                 <div class="form-group">
-                    <label class="form-label" id="usernameFieldLabel" for="inputUsername">Student ID</label>
+                    <label class="form-label" for="inputUsername">Account ID / Username</label>
                     <input type="text" class="form-control" name="username" id="inputUsername" required placeholder="e.g. 2023-53512" autocomplete="username">
                 </div>
 
@@ -485,7 +466,7 @@
                         </button>
                     </div>
                     <small id="passwordHint" style="color: #64748b; font-size: 11.5px; margin-top: 6px; display: block; line-height: 1.4;">
-                        Default password: <strong>Student's Last Name</strong> (e.g. <code>DELACRUZ</code> or <code>Dela Cruz</code>)
+                        Default password for students & parents: <strong>Student's Last Name</strong> (e.g. <code>DELACRUZ</code>)
                     </small>
                 </div>
 
@@ -494,13 +475,6 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Sign In</span>
                     </button>
-                </div>
-
-                <!-- Role switcher text link -->
-                <div style="text-align: center;">
-                    <a href="javascript:void(0)" class="role-switcher-link" id="toggleRoleLink">
-                        Switch to Administrator Portal &rarr;
-                    </a>
                 </div>
             </form>
         </div>
@@ -516,56 +490,11 @@
         const btnFooterGetStarted = document.getElementById('btnFooterGetStarted');
         const btnCloseLoginModal = document.getElementById('btnCloseLoginModal');
 
-        const modalHeaderIcon = document.getElementById('modalHeaderIcon');
-        const loginModalTitle = document.getElementById('loginModalTitle');
-        const loginModalSub = document.getElementById('loginModalSub');
-        const usernameFieldLabel = document.getElementById('usernameFieldLabel');
         const inputUsername = document.getElementById('inputUsername');
-        const loginRoleInput = document.getElementById('loginRoleInput');
-        const toggleRoleLink = document.getElementById('toggleRoleLink');
-
-        let currentRole = 'student';
-
-        function applyRole(role) {
-            currentRole = role;
-            loginRoleInput.value = role;
-
-            const tabStudent = document.getElementById('tabRoleStudent');
-            const tabAdmin   = document.getElementById('tabRoleAdmin');
-
-            if (role === 'admin') {
-                if (tabAdmin) tabAdmin.classList.add('active');
-                if (tabStudent) tabStudent.classList.remove('active');
-                modalHeaderIcon.textContent = '🛡️';
-                modalHeaderIcon.style.background = '#f1f5f9';
-                modalHeaderIcon.style.color = '#0f172a';
-                loginModalTitle.textContent = 'Admin Sign In';
-                loginModalSub.textContent = 'Enter your administrative credentials';
-                usernameFieldLabel.textContent = 'Admin Username';
-                inputUsername.placeholder = 'admin';
-                toggleRoleLink.innerHTML = '&larr; Switch to Student / Parent Portal';
-                const pwHint = document.getElementById('passwordHint');
-                if (pwHint) pwHint.style.display = 'none';
-            } else {
-                if (tabStudent) tabStudent.classList.add('active');
-                if (tabAdmin) tabAdmin.classList.remove('active');
-                modalHeaderIcon.textContent = '🎓';
-                modalHeaderIcon.style.background = '#ecfdf5';
-                modalHeaderIcon.style.color = '#059669';
-                loginModalTitle.textContent = 'Student / Parent Sign In';
-                loginModalSub.textContent = 'Enter your Student ID and password to access your portal';
-                usernameFieldLabel.textContent = 'Student ID';
-                inputUsername.placeholder = 'e.g. 2023-53512';
-                toggleRoleLink.innerHTML = 'Switch to Administrator Portal &rarr;';
-                const pwHint = document.getElementById('passwordHint');
-                if (pwHint) pwHint.style.display = 'block';
-            }
-        }
+        const inputPassword = document.getElementById('inputPassword');
+        const btnTogglePassword = document.getElementById('btnTogglePassword');
 
         // Password visibility toggle
-        const btnTogglePassword = document.getElementById('btnTogglePassword');
-        const inputPassword = document.getElementById('inputPassword');
-
         if (btnTogglePassword && inputPassword) {
             btnTogglePassword.addEventListener('click', () => {
                 const isPassword = inputPassword.getAttribute('type') === 'password';
@@ -575,8 +504,7 @@
             });
         }
 
-        function openModal(role = 'student') {
-            applyRole(role);
+        function openModal() {
             loginBackdrop.classList.add('active');
             inputUsername.focus();
         }
@@ -585,17 +513,10 @@
             loginBackdrop.classList.remove('active');
         }
 
-        btnHeaderLogin && btnHeaderLogin.addEventListener('click', () => openModal('student'));
-        btnHeroGetStarted && btnHeroGetStarted.addEventListener('click', () => openModal('student'));
-        btnFooterGetStarted && btnFooterGetStarted.addEventListener('click', () => openModal('student'));
+        btnHeaderLogin && btnHeaderLogin.addEventListener('click', openModal);
+        btnHeroGetStarted && btnHeroGetStarted.addEventListener('click', openModal);
+        btnFooterGetStarted && btnFooterGetStarted.addEventListener('click', openModal);
         btnCloseLoginModal && btnCloseLoginModal.addEventListener('click', closeModal);
-
-        toggleRoleLink && toggleRoleLink.addEventListener('click', () => {
-            applyRole(currentRole === 'student' ? 'admin' : 'student');
-            inputUsername.value = '';
-            document.getElementById('inputPassword').value = '';
-            inputUsername.focus();
-        });
 
         window.addEventListener('click', (e) => {
             if (e.target === loginBackdrop) closeModal();
@@ -623,11 +544,9 @@
             document.body.style.overflow = '';
         };
 
-        window.openPortalFromNav = function(role) {
+        window.openPortalFromNav = function() {
             closeMobileDrawer();
-            setTimeout(function() {
-                openModal(role);
-            }, 100);
+            setTimeout(openModal, 100);
         };
 
         if (btnNavToggle) {
@@ -650,21 +569,19 @@
         }
 
         // Show flash error if login fails
-        const flashError = <?= json_encode($error) ?>;
-        const openRole   = <?= json_encode($openRole) ?>;
+        const flashError = <?= json_encode($error ?? '') ?>;
         const lastUsername = <?= json_encode($lastUsername ?? '') ?>;
 
         if (flashError) {
-            openModal(openRole || 'student');
-            // Restore the username the user had typed
+            openModal();
             if (lastUsername && inputUsername) {
                 inputUsername.value = lastUsername;
             }
             Swal.fire({
                 icon: 'error',
-                title: 'Login Error',
+                title: 'Sign In Notice',
                 text: flashError,
-                confirmButtonColor: '#18181b'
+                confirmButtonColor: '#0b3d2e'
             });
         }
 

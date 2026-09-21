@@ -20,51 +20,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'create_student':
             AdminController::createStudent();
             break;
-        case 'assign_fee':
-            AdminController::assignFee();
+        case 'create_accounting':
+            AdminController::createAccounting();
             break;
-        case 'save_fee_category':
-            AdminController::saveFeeCategory();
+        case 'delete_user':
+            AdminController::deleteUser();
             break;
-        case 'delete_fee_category':
-            AdminController::deleteFeeCategory();
-            break;
-        case 'delete_student':
-            AdminController::deleteStudent();
-            break;
-        case 'delete_fee':
-            AdminController::deleteFee();
+        case 'update_status':
+            AdminController::updateUserStatus();
             break;
     }
 }
 
-// Routing view: 'home' (students), 'transactions', 'fees', 'categories', 'logs'
+// Routing view: 'home' (default), 'users', 'logs'
 $currentView = $_GET['view'] ?? 'home';
-
-$students = Student::all();
-$fees = TuitionFee::all();
-$payments = Payment::all();
-$feeCategories = FeeCategory::all();
-$fixedFeeTotal = FeeCategory::getFixedTotal();
-$categoryCount = count($feeCategories);
-
-// Compute Summary Metrics for Home Dashboard
-$totalRevenue = 0;
-foreach ($payments as $p) {
-    $totalRevenue += (float) ($p['amount'] ?? 0);
+$allowedViews = ['home', 'users', 'logs'];
+if (!in_array($currentView, $allowedViews, true)) {
+    $currentView = 'home';
 }
-$totalAssessed = 0;
-foreach ($fees as $f) {
-    $totalAssessed += (float) ($f['total_amount'] ?? 0);
-}
-$totalReceivables = max(0, $totalAssessed - $totalRevenue);
 
-// Query email logs
+// Fetch users with live activity and days online tracking
+$allUsers = User::getAllWithActivity();
+
+// Summary Metrics
+$totalUsers = count($allUsers);
+$studentCount = 0;
+$accountingCount = 0;
+$adminCount = 0;
+$onlineCount = 0;
+$activeWeekCount = 0;
+$now = time();
+
+foreach ($allUsers as $u) {
+    if ($u['role'] === 'student') $studentCount++;
+    if ($u['role'] === 'accounting') $accountingCount++;
+    if ($u['role'] === 'admin') $adminCount++;
+    if (!empty($u['is_online'])) $onlineCount++;
+
+    if (!empty($u['last_active_at']) && ($now - strtotime($u['last_active_at']) <= 7 * 86400)) {
+        $activeWeekCount++;
+    }
+}
+
+// Query system-wide email logs
 $db = Database::getInstance();
-$emailLogs = $db->query("SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT 50")->fetchAll();
+$emailLogs = $db->query("SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT 100")->fetchAll();
+$totalLogsCount = count($emailLogs);
 
 $successMsg = Auth::getFlash('success');
 $errorMsg = Auth::getFlash('error');
 $createdCreds = Auth::getFlash('created_student_credentials');
 
 require_once __DIR__ . '/../../views/admin/dashboard.php';
+

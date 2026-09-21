@@ -89,4 +89,11 @@ class Student
             $stmt->execute([$student['user_id']]);
         }
     }
+
+    public static function updateClassDetails(int $id, string $gradeLevel, string $schoolYear): void
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("UPDATE students SET grade_level = ?, school_year = ? WHERE id = ?");
+        $stmt->execute([$gradeLevel, $schoolYear, $id]);
+    }
 }

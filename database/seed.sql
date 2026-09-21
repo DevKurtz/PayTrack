@@ -18,14 +18,20 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ------------------------------------------------------------
 -- Admin account (password: admin123)
 -- ------------------------------------------------------------
-INSERT INTO `users` (`id`, `username`, `password_hash`, `role`, `is_first_login`) VALUES
-(1, 'admin', '$2y$10$jJBca9GtHWFBVFnZkqsIduuOLLnX.4fX2ZcTTijQ4ljIiNHmtVauW', 'admin', 0);
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(1, 'admin', 'System Administrator', 'admin@paytrack.edu.ph', '$2y$10$jJBca9GtHWFBVFnZkqsIduuOLLnX.4fX2ZcTTijQ4ljIiNHmtVauW', 'admin', 0, 'active', NOW());
+
+-- ------------------------------------------------------------
+-- Accounting Staff account (password: accounting123)
+-- ------------------------------------------------------------
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(2, 'accounting', 'Accounting Office', 'accounting@paytrack.edu.ph', '$2y$10$iI0T6iO6pZ6sB0T6x9zGquxMqv3l2Y4V5S/x7l4I7K4b.dF0H9.W.', 'accounting', 0, 'active', NOW());
 
 -- ------------------------------------------------------------
 -- Sample student user (format: 2023-53512 / password: DELACRUZ)
 -- ------------------------------------------------------------
-INSERT INTO `users` (`id`, `username`, `password_hash`, `role`, `is_first_login`) VALUES
-(2, '2023-53512', '$2y$10$9kCOdWJNylQsuxeo.VBb9OxBN7TCfgsF03uXEtq3xSWgJFihb1GpW', 'student', 1);
+INSERT INTO `users` (`id`, `username`, `name`, `email`, `password_hash`, `role`, `is_first_login`, `status`, `created_at`) VALUES
+(3, '2023-53512', 'Juan Dela Cruz', 'juan.delacruz@email.com', '$2y$10$9kCOdWJNylQsuxeo.VBb9OxBN7TCfgsF03uXEtq3xSWgJFihb1GpW', 'student', 1, 'active', NOW());
 
 -- ------------------------------------------------------------
 -- Default Fee Categories
@@ -50,7 +56,7 @@ INSERT INTO `students`
    `email`, `grade_level`, `school_year`,
    `parent_name`, `parent_email`, `contact_number`)
 VALUES
-  (1, 2, '2023-53512', 'Juan', 'Dela Cruz', 'Santos',
+  (1, 3, '2023-53512', 'Juan', 'Dela Cruz', 'Santos',
    'juan.delacruz@email.com', 'Grade 11 - STEM', '2024-2025',
    'Maria Dela Cruz', 'maria.delacruz@email.com', '09171234567');
 

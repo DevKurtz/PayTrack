@@ -10,9 +10,10 @@ $studentInitial = strtoupper(substr($student['first_name'] ?? 'J', 0, 1));
 
 $primaryFee = !empty($fees) ? $fees[0] : null;
 $breakdownItems = $primaryFee ? ($primaryFee['items'] ?? []) : [];
-$termDescription = $primaryFee['description'] ?? 'S.Y. 2024-2025 - 1st Semester Tuition';
+$termDescription = $primaryFee['description'] ?? 'S.Y. ' . ($student['school_year'] ?? (date('Y') . '-' . (date('Y') + 1))) . ' - Assessment Pending';
+$isPendingAssessment = empty($fees) || !$primaryFee;
 
-$calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) : 100;
+$calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1227,31 +1228,120 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                             </svg>
                             Pay Tuition Now &rarr;
                         </button>
+                    <?php elseif ($isPendingAssessment): ?>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="pill-badge" style="background: #fef3c7; color: #b45309; font-weight: 700; padding: 7px 14px; border-radius: 9999px; font-size: 12px; border: 1px solid #fde68a; display: inline-flex; align-items: center; gap: 7px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                                Tuition Assessment Pending
+                            </span>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($isPendingAssessment): ?>
+                    <!-- Pending Assessment Onboarding Card & 3-Step Stepper -->
+                    <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.05);">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+                            <div style="max-width: 680px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <span class="pill-badge" style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 11.5px; padding: 3px 10px; border: 1px solid #fde68a; display: inline-flex; align-items: center; gap: 5px;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                                        Enrollment In Progress
+                                    </span>
+                                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">Phase 2 of 3</span>
+                                </div>
+                                <h2 style="font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 6px;">Tuition Assessment is Currently Under Evaluation</h2>
+                                <p style="font-size: 13px; color: #475569; line-height: 1.6; margin: 0 0 12px;">
+                                    Welcome to PayTrack! Your student account has been registered by the Administration. The <strong>Accounting Office</strong> is preparing your class curriculum, course units, and institutional fees. Once finalized, an official statement with fee breakdowns will be sent to your email (<strong><?= e($student['email'] ?? 'your email') ?></strong>) and your parent/guardian's email.
+                                </p>
+                            </div>
+                            <div>
+                                <button disabled class="btn-pay-now-main" style="opacity: 0.5; cursor: not-allowed; background: #64748b; box-shadow: none;" title="Payment will be activated once tuition assessment is published">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    Payment Locked
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3-Step Interactive Progress Stepper -->
+                        <div style="margin-top: 18px; padding-top: 18px; border-top: 1px dashed #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+                            <!-- Step 1: Account Registered -->
+                            <div style="display: flex; gap: 12px; align-items: flex-start; background: #ffffff; padding: 14px 16px; border-radius: 10px; border: 1px solid #bbf7d0;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
+                                    &#10003;
+                                </div>
+                                <div>
+                                    <div style="font-size: 12.5px; font-weight: 700; color: #0f172a;">1. Account Registered</div>
+                                    <div style="font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 2px;">Completed &bull; Active Profile</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Student login verified and active.</div>
+                                </div>
+                            </div>
+                            <!-- Step 2: Tuition Assessment -->
+                            <div style="display: flex; gap: 12px; align-items: flex-start; background: #fffbeb; padding: 14px 16px; border-radius: 10px; border: 1.5px solid #fde68a;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
+                                    ⏳
+                                </div>
+                                <div>
+                                    <div style="font-size: 12.5px; font-weight: 700; color: #92400e;">2. Tuition Assessment</div>
+                                    <div style="font-size: 11px; color: #d97706; font-weight: 600; margin-top: 2px;">In Progress &bull; Accounting</div>
+                                    <div style="font-size: 11px; color: #78350f; margin-top: 3px;">Staff evaluating subject units &amp; fees.</div>
+                                </div>
+                            </div>
+                            <!-- Step 3: Payment & Clearance -->
+                            <div style="display: flex; gap: 12px; align-items: flex-start; background: #ffffff; padding: 14px 16px; border-radius: 10px; border: 1px solid #e2e8f0; opacity: 0.75;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
+                                    3
+                                </div>
+                                <div>
+                                    <div style="font-size: 12.5px; font-weight: 700; color: #475569;">3. Payment &amp; Clearance</div>
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 600; margin-top: 2px;">Upcoming Next</div>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Online GCash/Maya &amp; instant receipts.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Helpful Footer Note -->
+                        <div style="margin-top: 14px; font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                            <span>💡</span>
+                            <span>Need urgent enrollment assistance? Visit the campus Accounting Office (Mon&ndash;Fri, 8AM&ndash;5PM) or email <strong>accounting@school.edu.ph</strong>.</span>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- 4 Quick Metric Summary Cards -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Remaining Tuition Balance</div>
-                        <div style="font-size: 24px; font-weight: 800; color: <?= $totalRemaining > 0 ? '#dc2626' : '#059669' ?>;"><?= peso($totalRemaining) ?></div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
-                            <?= $totalRemaining > 0 ? 'Due for active semester' : 'Tuition fully settled' ?>
-                        </div>
+                        <?php if ($isPendingAssessment): ?>
+                            <div style="font-size: 18px; font-weight: 800; color: #d97706;">Pending Assessment</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                                Awaiting Accounting Office posting
+                            </div>
+                        <?php else: ?>
+                            <div style="font-size: 24px; font-weight: 800; color: <?= $totalRemaining > 0 ? '#dc2626' : '#059669' ?>;"><?= peso($totalRemaining) ?></div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                                <?= $totalRemaining > 0 ? 'Due for active semester' : 'Tuition fully settled' ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Total Paid to Date</div>
                         <div style="font-size: 24px; font-weight: 800; color: #059669;"><?= peso($totalPaid) ?></div>
                         <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
-                            <?= $calcPct ?>% of total assessment
+                            <?= $isPendingAssessment ? 'No assessment yet' : ($calcPct . '% of total assessment') ?>
                         </div>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Account Billing Status</div>
                         <div>
-                            <?php if ($totalRemaining <= 0): ?>
+                            <?php if ($isPendingAssessment): ?>
+                                <span class="pill-badge" style="font-size: 12px; padding: 4px 12px; background: #fef3c7; color: #b45309; font-weight: 700;">Evaluating &bull; In Progress</span>
+                            <?php elseif ($totalRemaining <= 0): ?>
                                 <span class="pill-badge green" style="font-size: 12px; padding: 4px 12px;">Fully Paid &#10003;</span>
                             <?php elseif ($totalPaid > 0): ?>
                                 <span class="pill-badge blue" style="font-size: 12px; padding: 4px 12px; background: #e0f2fe; color: #0369a1;">Partial (<?= $calcPct ?>%)</span>
@@ -1259,7 +1349,9 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                                 <span class="pill-badge red" style="font-size: 12px; padding: 4px 12px; background: #fee2e2; color: #b91c1c;">Unpaid Assessment</span>
                             <?php endif; ?>
                         </div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">Enrollment standing: Clear</div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">
+                            <?= $isPendingAssessment ? 'Enrollment registered' : 'Enrollment standing: Clear' ?>
+                        </div>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1396,30 +1488,41 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                         <div class="card-term-sub">Term: <?= e($termDescription) ?></div>
 
                         <div class="balance-amount-row">
-                            <div class="balance-huge-red"><?= peso($totalRemaining) ?></div>
-                            <?php if ($primaryFee && $totalRemaining > 0): ?>
-                                <button class="btn-pay-pill-dark" onclick="openPaymentModal(<?= $primaryFee['id'] ?>, '<?= e($termDescription) ?>', <?= $totalRemaining ?>)">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                                    </svg>
-                                    Pay Tuition &gt;
+                            <?php if ($isPendingAssessment): ?>
+                                <div class="balance-huge-red" style="font-size: 22px; color: #d97706;">Pending Assessment</div>
+                                <button disabled class="btn-pay-pill-dark" style="opacity: 0.55; cursor: not-allowed; background: #64748b;" title="Payment will be enabled once tuition assessment is published">
+                                    Payment Locked
                                 </button>
                             <?php else: ?>
-                                <span class="pill-badge green" style="font-size: 12px; padding: 5px 14px;">Fully Paid &#10003;</span>
+                                <div class="balance-huge-red"><?= peso($totalRemaining) ?></div>
+                                <?php if ($primaryFee && $totalRemaining > 0): ?>
+                                    <button class="btn-pay-pill-dark" onclick="openPaymentModal(<?= $primaryFee['id'] ?>, '<?= e($termDescription) ?>', <?= $totalRemaining ?>)">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                        Pay Tuition &gt;
+                                    </button>
+                                <?php else: ?>
+                                    <span class="pill-badge green" style="font-size: 12px; padding: 5px 14px;">Fully Paid &#10003;</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
 
                         <div class="balance-meta-bullet">
-                            <span class="dot"></span>
-                            <span><strong><?= peso($totalPaid) ?></strong> paid of <strong><?= peso($totalFees) ?></strong> total assessment (<?= $calcPct ?>%)</span>
+                            <span class="dot" style="<?= $isPendingAssessment ? 'background: #f59e0b;' : '' ?>"></span>
+                            <?php if ($isPendingAssessment): ?>
+                                <span>Awaiting official tuition schedule and assessment from the Accounting Office</span>
+                            <?php else: ?>
+                                <span><strong><?= peso($totalPaid) ?></strong> paid of <strong><?= peso($totalFees) ?></strong> total assessment (<?= $calcPct ?>%)</span>
+                            <?php endif; ?>
                         </div>
 
                         <div class="progress-track-wrapper">
                             <div class="progress-bar-track">
                                 <div class="progress-bar-fill-green" style="width: <?= $calcPct ?>%;"></div>
                             </div>
-                            <span class="progress-pct-label"><?= $calcPct ?>%</span>
+                            <span class="progress-pct-label"><?= $isPendingAssessment ? 'Pending' : ($calcPct . '%') ?></span>
                         </div>
                     </div>
 
@@ -1497,10 +1600,22 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (empty($breakdownItems)): ?>
+                                <?php if ($isPendingAssessment || empty($breakdownItems)): ?>
                                     <tr>
-                                        <td colspan="3" style="text-align: center; padding: 28px; color: #64748b;">
-                                            No itemized breakdown assigned yet.
+                                        <td colspan="3" style="text-align: center; padding: 44px 20px; background: #fafafa;">
+                                            <div style="max-width: 520px; margin: 0 auto; text-align: center;">
+                                                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 22px;">
+                                                    ⏳
+                                                </div>
+                                                <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 6px;">Tuition Assessment in Preparation</h3>
+                                                <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0 0 16px;">
+                                                    The Accounting Office is currently processing your academic program and calculating your subject units, laboratory access, and institutional fees.
+                                                </p>
+                                                <div style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px; font-size: 12px; color: #334155;">
+                                                    <span style="color: #2563eb;">📧</span>
+                                                    <span>Official breakdown will be sent to: <strong><?= e($student['email'] ?? 'Registered Student Email') ?></strong></span>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php else: ?>

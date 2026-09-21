@@ -128,6 +128,43 @@ class TuitionFee
         $stmt->execute([$newPaid, $status, $feeId]);
     }
 
+    public static function createCustomAssessment(
+        int $studentId,
+        string $schoolYear,
+        string $semester,
+        string $description,
+        ?string $dueDate,
+        array $items
+    ): int {
+        $db = Database::getInstance();
+
+        $totalAmount = 0.0;
+        foreach ($items as $it) {
+            $totalAmount += max(0.0, (float)($it['amount'] ?? 0));
+        }
+
+        $stmt = $db->prepare(
+            "INSERT INTO tuition_fees (student_id, school_year, semester, description, total_amount, amount_paid, due_date, status)
+             VALUES (?, ?, ?, ?, ?, 0.00, ?, 'unpaid')"
+        );
+        $stmt->execute([$studentId, $schoolYear, $semester, $description, $totalAmount, $dueDate ?: null]);
+        $feeId = (int) $db->lastInsertId();
+
+        if (!empty($items)) {
+            $itemStmt = $db->prepare(
+                "INSERT INTO tuition_fee_items (tuition_fee_id, fee_category_id, category_name, amount) VALUES (?, ?, ?, ?)"
+            );
+            foreach ($items as $it) {
+                $catId = !empty($it['fee_category_id']) && (int)$it['fee_category_id'] > 0 ? (int)$it['fee_category_id'] : null;
+                $catName = trim($it['category_name'] ?? 'Fee Item');
+                $amt = max(0.0, (float)($it['amount'] ?? 0));
+                $itemStmt->execute([$feeId, $catId, $catName, $amt]);
+            }
+        }
+
+        return $feeId;
+    }
+
     public static function delete(int $id): void
     {
         $db = Database::getInstance();

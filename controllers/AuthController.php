@@ -14,12 +14,10 @@ class AuthController
 
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $role     = trim($_POST['role'] ?? '');
 
         // Basic validation
         if ($username === '' || $password === '') {
-            Auth::setFlash('error', 'Please fill in all fields.');
-            Auth::setFlash('open_role', $role);
+            Auth::setFlash('error', 'Please enter your username and password.');
             Auth::setFlash('last_username', $username);
             redirect(APP_URL . '/public/');
         }
@@ -61,16 +59,25 @@ class AuthController
 
         if (!$user || !$isPasswordValid) {
             Auth::setFlash('error', 'Invalid username or password.');
-            Auth::setFlash('open_role', $role);
             Auth::setFlash('last_username', $username);
             redirect(APP_URL . '/public/');
         }
 
-        if ($user['role'] !== $role) {
-            Auth::setFlash('error', 'Access denied. Wrong portal for this account.');
-            Auth::setFlash('open_role', $role);
+        // Check account status
+        if (!empty($user['status']) && $user['status'] === 'suspended') {
+            Auth::setFlash('error', 'Your account has been suspended. Please contact the administrator.');
+            Auth::setFlash('last_username', $username);
             redirect(APP_URL . '/public/');
         }
+
+        if (!empty($user['status']) && $user['status'] === 'inactive') {
+            Auth::setFlash('error', 'Your account is currently inactive.');
+            Auth::setFlash('last_username', $username);
+            redirect(APP_URL . '/public/');
+        }
+
+        // Record last login & activity
+        User::updateLastLogin($user['id']);
 
         // Security: Regenerate session ID to prevent session fixation
         session_regenerate_id(true);
@@ -82,9 +89,11 @@ class AuthController
         $_SESSION['last_activity'] = time();
         $_SESSION['user_agent']    = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-        // Redirect
+        // Dynamic Role-Based Redirection
         if ($user['role'] === 'admin') {
             redirect(APP_URL . '/public/admin/');
+        } elseif ($user['role'] === 'accounting') {
+            redirect(APP_URL . '/public/accounting/');
         } else {
             redirect(APP_URL . '/public/student/');
         }
