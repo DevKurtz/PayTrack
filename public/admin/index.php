@@ -70,6 +70,8 @@ $totalLogsCount = count($emailLogs);
 $successMsg = Auth::getFlash('success');
 $errorMsg = Auth::getFlash('error');
 $createdCreds = Auth::getFlash('created_student_credentials');
+$studentFormData = Auth::getFlash('student_form_data') ?? [];
+$studentFormErrors = Auth::getFlash('student_form_errors') ?? [];
+$accountCreated = Auth::getFlash('account_created');
 
 require_once __DIR__ . '/../../views/admin/dashboard.php';
-

@@ -32,31 +32,45 @@ class AdminController
 
         $classGrade = "{$course} {$sectionCode}";
 
+        $formData = [
+            'student_id' => $studentId, 'first_name' => $firstName, 'last_name' => $lastName,
+            'middle_name' => $middleName, 'student_email' => $studentEmail, 'parent_name' => $parentName,
+            'parent_email' => $parentEmail, 'parent_contact' => $parentContact, 'course' => $course,
+            'section_code' => $sectionCode, 'school_year' => $schoolYear,
+        ];
+        $fail = static function (array $errors) use ($formData): void {
+            Auth::setFlash('student_form_errors', $errors);
+            Auth::setFlash('student_form_data', $formData);
+            redirect(APP_URL . '/public/admin/?view=users');
+        };
+
         // Validations
         if (!preg_match('/^\d{4}-\d{5}$/', $studentId)) {
-            Auth::setFlash('error', 'Invalid Student ID format. Must be 4 digits, hyphen, and 5 digits (e.g. 2024-12345).');
-            redirect(APP_URL . '/public/admin/?view=users');
+            $fail(['student_id' => 'Use the format 2024-12345.']);
         }
 
         if (!isValidName($firstName) || !isValidName($lastName)) {
-            Auth::setFlash('error', 'Please enter a valid student first and last name (letters only).');
-            redirect(APP_URL . '/public/admin/?view=users');
+            $fail(['first_name' => 'Enter a valid first name.', 'last_name' => 'Enter a valid last name.']);
         }
 
         if (!isValidEmail($studentEmail)) {
-            Auth::setFlash('error', 'Please provide a valid Student Email address.');
-            redirect(APP_URL . '/public/admin/?view=users');
+            $fail(['student_email' => 'Enter a valid student email.']);
         }
 
         if (!empty($parentEmail) && !isValidEmail($parentEmail)) {
-            Auth::setFlash('error', 'Please provide a valid Parent Email address.');
-            redirect(APP_URL . '/public/admin/?view=users');
+            $fail(['parent_email' => 'Enter a valid parent email.']);
+        }
+
+        if ($parentEmail !== '' && strcasecmp($studentEmail, $parentEmail) === 0) {
+            $fail(['student_email' => 'Student and parent emails must be different.', 'parent_email' => 'Student and parent emails must be different.']);
         }
 
         // Check if student id or username already exists
         if (User::findByUsername($studentId)) {
-            Auth::setFlash('error', "Student ID '{$studentId}' is already registered in the system.");
-            redirect(APP_URL . '/public/admin/?view=users');
+            $fail(['student_id' => 'This Student ID is already registered.']);
+        }
+        if (User::findByEmail($studentEmail)) {
+            $fail(['student_email' => 'This student email is already registered.']);
         }
 
         // Default password = Student's Last Name (stored cleanly as upper)
@@ -111,6 +125,7 @@ class AdminController
             'default_password' => $rawPassword,
         ]);
         Auth::setFlash('success', "Student account registered for {$firstName} {$lastName}. Notification emails have been sent to the Student, Parent, and Accounting Office.");
+        Auth::setFlash('account_created', ['type' => 'student', 'name' => "{$firstName} {$lastName}"]);
         redirect(APP_URL . '/public/admin/?view=users');
     }
 
@@ -150,6 +165,7 @@ class AdminController
         Mailer::sendAccountingCredentials($email, $name, $username, $password);
 
         Auth::setFlash('success', "Accounting Staff account created for {$name} ({$username}). Login credentials sent via email.");
+        Auth::setFlash('account_created', ['type' => 'accounting', 'name' => $name]);
         redirect(APP_URL . '/public/admin/?view=users');
     }
 

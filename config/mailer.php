@@ -9,6 +9,26 @@ if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
 
 class Mailer
 {
+    /** Shared branded payment notification for both student and cashier payments. */
+    public static function paymentReceiptHtml(array $student, array $fee, string $orNumber, float $amount, string $method, float $remaining, bool $cashier = false): string
+    {
+        $name = htmlspecialchars(trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? '')), ENT_QUOTES, 'UTF-8');
+        $studentId = htmlspecialchars((string) ($student['student_id'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $description = htmlspecialchars((string) ($fee['description'] ?? 'Tuition payment'), ENT_QUOTES, 'UTF-8');
+        $methodLabel = htmlspecialchars(strtoupper(str_replace('_', ' ', $method)), ENT_QUOTES, 'UTF-8');
+        $status = $remaining <= 0 ? 'Payment complete — assessment fully paid' : 'Payment recorded — balance remains';
+        $statusColor = $remaining <= 0 ? '#15803d' : '#b45309';
+        $channel = $cashier ? 'Recorded by the Accounting Office' : 'Recorded through the Student Portal';
+        return "<div style='margin:0;padding:24px;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#1e293b;'>
+          <table role='presentation' style='width:100%;max-width:620px;margin:auto;border-collapse:collapse;background:#ffffff;border:1px solid #dbe3ec;border-radius:14px;overflow:hidden;'>
+            <tr><td style='padding:24px 28px;background:#0b3d2e;color:#fff;'><div style='font-size:12px;letter-spacing:1px;font-weight:bold;opacity:.8'>PAYTRACK</div><div style='font-size:24px;font-weight:bold;margin-top:5px'>Payment received</div><div style='font-size:13px;margin-top:6px;opacity:.9'>Official electronic receipt and payment confirmation</div></td></tr>
+            <tr><td style='padding:25px 28px;'><p style='margin:0 0 16px;font-size:15px'>Hello <strong>{$name}</strong>,</p><p style='margin:0 0 20px;font-size:14px;line-height:1.55'>Your payment has been successfully recorded. Keep this email as your payment confirmation.</p>
+              <div style='padding:15px 16px;background:#f8fafc;border:1px solid #dbe3ec;border-radius:10px'>
+                <div style='font-size:11px;color:#64748b;font-weight:bold;letter-spacing:.6px'>OFFICIAL RECEIPT NO.</div><div style='font-size:20px;font-family:monospace;font-weight:bold;color:#0b3d2e;margin:3px 0 14px'>{$orNumber}</div>
+                <table role='presentation' style='width:100%;border-collapse:collapse;font-size:13px'><tr><td style='padding:6px 0;color:#64748b'>Student</td><td style='padding:6px 0;text-align:right;font-weight:bold'>{$name} ({$studentId})</td></tr><tr><td style='padding:6px 0;color:#64748b'>Assessment</td><td style='padding:6px 0;text-align:right;font-weight:bold'>{$description}</td></tr><tr><td style='padding:6px 0;color:#64748b'>Payment method</td><td style='padding:6px 0;text-align:right;font-weight:bold'>{$methodLabel}</td></tr><tr><td style='padding:12px 0 4px;color:#64748b;border-top:1px solid #dbe3ec'>Amount paid</td><td style='padding:12px 0 4px;text-align:right;font-size:19px;font-weight:bold;color:#15803d'>" . peso($amount) . "</td></tr><tr><td style='padding:6px 0;color:#64748b'>Remaining balance</td><td style='padding:6px 0;text-align:right;font-weight:bold'>" . peso($remaining) . "</td></tr></table>
+              </div><div style='margin-top:16px;padding:10px 12px;background:#f8fafc;border-radius:8px;color:{$statusColor};font-size:13px;font-weight:bold'>{$status}</div><p style='margin:20px 0 0;color:#64748b;font-size:12px'>{$channel} on " . date('M d, Y h:i A') . ".</p></td></tr>
+          </table></div>";
+    }
     /**
      * Send an email via PHPMailer (SMTP) with automatic audit logging
      */

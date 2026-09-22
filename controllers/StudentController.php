@@ -71,6 +71,7 @@ class StudentController
                 <p style='color: #6b7280; font-size: 13px;'>Keep this receipt for your records. Verified & Recorded.</p>
             </div>
         ";
+        $receiptHtml = Mailer::paymentReceiptHtml($student, $fee, $orNumber, $amount, $method, $newRemaining);
 
         Mailer::send($student['email'], "{$student['first_name']} {$student['last_name']}", "Payment Receipt: {$orNumber}", $receiptHtml, 'payment_confirmation', $feeId);
 

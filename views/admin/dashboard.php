@@ -5,6 +5,8 @@
  * Accounting Staff Creation, User Deletion & Status Management, System Email Logs.
  */
 $adminUsername = Auth::username() ?? 'admin';
+$studentValue = static fn(string $key, string $default = ''): string => e((string) ($studentFormData[$key] ?? $default));
+$studentError = static fn(string $key): string => !empty($studentFormErrors[$key]) ? ' input-invalid' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -145,7 +147,7 @@ $adminUsername = Auth::username() ?? 'admin';
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" id="adminUserSearch" placeholder="Search user by name, ID, username, or email..." autocomplete="off">
+                <input type="text" id="adminUserSearch" placeholder="Search user by name, ID, username, or email..." autocomplete="off" value="<?= e($_GET['search'] ?? '') ?>">
                 <span class="kbd-badge">Ctrl + K</span>
             </div>
 
@@ -724,26 +726,26 @@ $adminUsername = Auth::username() ?? 'admin';
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label class="form-label" for="newStudentId">Student ID *</label>
-                    <input type="text" class="form-control" name="student_id" id="newStudentId" required placeholder="e.g. 2024-10001" pattern="\d{4}-\d{5}">
+                    <input type="text" class="form-control<?= $studentError('student_id') ?>" name="student_id" id="newStudentId" required placeholder="e.g. 2024-10001" pattern="\d{4}-\d{5}" value="<?= $studentValue('student_id') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newStudentEmail">Student Email *</label>
-                    <input type="email" class="form-control" name="student_email" id="newStudentEmail" required placeholder="student@email.com">
+                    <input type="email" class="form-control<?= $studentError('student_email') ?>" name="student_email" id="newStudentEmail" required placeholder="student@email.com" value="<?= $studentValue('student_email') ?>">
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label class="form-label" for="newFirstName">First Name *</label>
-                    <input type="text" class="form-control" name="first_name" id="newFirstName" required placeholder="First name">
+                    <input type="text" class="form-control<?= $studentError('first_name') ?>" name="first_name" id="newFirstName" required placeholder="First name" value="<?= $studentValue('first_name') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newMiddleName">Middle Name</label>
-                    <input type="text" class="form-control" name="middle_name" id="newMiddleName" placeholder="Optional">
+                    <input type="text" class="form-control" name="middle_name" id="newMiddleName" placeholder="Optional" value="<?= $studentValue('middle_name') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newLastName">Last Name *</label>
-                    <input type="text" class="form-control" name="last_name" id="newLastName" required placeholder="Last name">
+                    <input type="text" class="form-control<?= $studentError('last_name') ?>" name="last_name" id="newLastName" required placeholder="Last name" value="<?= $studentValue('last_name') ?>">
                 </div>
             </div>
 
@@ -751,40 +753,40 @@ $adminUsername = Auth::username() ?? 'admin';
                 <div class="form-group">
                     <label class="form-label" for="newCourse">Course / Program *</label>
                     <select class="form-control" name="course" id="newCourse">
-                        <option value="BSCS">BS Computer Science</option>
-                        <option value="BSIT">BS Information Tech</option>
-                        <option value="BSEE">BS Electrical Eng</option>
-                        <option value="BSHM">BS Hospitality Mgt</option>
-                        <option value="BSIE">BS Industrial Eng</option>
-                        <option value="BSCrim">BS Criminology</option>
+                        <option value="BSCS" <?= $studentValue('course', 'BSCS') === 'BSCS' ? 'selected' : '' ?>>BS Computer Science</option>
+                        <option value="BSIT" <?= $studentValue('course') === 'BSIT' ? 'selected' : '' ?>>BS Information Tech</option>
+                        <option value="BSEE" <?= $studentValue('course') === 'BSEE' ? 'selected' : '' ?>>BS Electrical Eng</option>
+                        <option value="BSHM" <?= $studentValue('course') === 'BSHM' ? 'selected' : '' ?>>BS Hospitality Mgt</option>
+                        <option value="BSIE" <?= $studentValue('course') === 'BSIE' ? 'selected' : '' ?>>BS Industrial Eng</option>
+                        <option value="BSCrim" <?= $studentValue('course') === 'BSCrim' ? 'selected' : '' ?>>BS Criminology</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newSection">Section Code *</label>
-                    <input type="text" class="form-control" name="section_code" id="newSection" required value="11A1" placeholder="e.g. 11A1">
+                    <input type="text" class="form-control" name="section_code" id="newSection" required value="<?= $studentValue('section_code', '11A1') ?>" placeholder="e.g. 11A1">
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label class="form-label" for="newParentName">Parent / Guardian Name</label>
-                    <input type="text" class="form-control" name="parent_name" id="newParentName" placeholder="Parent full name">
+                    <input type="text" class="form-control" name="parent_name" id="newParentName" placeholder="Parent full name" value="<?= $studentValue('parent_name') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newParentEmail">Parent Email</label>
-                    <input type="email" class="form-control" name="parent_email" id="newParentEmail" placeholder="parent@email.com">
+                    <input type="email" class="form-control<?= $studentError('parent_email') ?>" name="parent_email" id="newParentEmail" placeholder="parent@email.com" value="<?= $studentValue('parent_email') ?>">
                 </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 20px;">
                 <label class="form-label" for="newParentContact">Parent Contact Number</label>
-                <input type="text" class="form-control" name="parent_contact" id="newParentContact" placeholder="09171234567">
+                <input type="text" class="form-control" name="parent_contact" id="newParentContact" placeholder="09171234567" value="<?= $studentValue('parent_contact') ?>">
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn" onclick="document.getElementById('enrollStudentModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn" style="background: #0b3d2e; color: #fff; font-weight: 700; padding: 10px 22px;">
-                    Enroll Student &amp; Send Emails
+                <button type="submit" class="btn" id="btnEnrollStudentSubmit" style="background: #0b3d2e; color: #fff; font-weight: 700; padding: 10px 22px;">
+                    <span class="submit-label">Enroll Student &amp; Send Emails</span>
                 </button>
             </div>
         </form>
@@ -882,6 +884,15 @@ $adminUsername = Auth::username() ?? 'admin';
     window.openCreateAccountingModal = function() {
         document.getElementById('createAccountingModal')?.classList.add('active');
     };
+
+    const enrollStudentForm = document.getElementById('enrollStudentForm');
+    enrollStudentForm?.addEventListener('submit', () => {
+        const submit = document.getElementById('btnEnrollStudentSubmit');
+        if (!submit || !enrollStudentForm.checkValidity()) return;
+        submit.disabled = true;
+        submit.classList.add('is-loading');
+        submit.querySelector('.submit-label').textContent = 'Creating account and sending emails…';
+    });
 
     // ── Delete User Confirmation ──
     window.confirmDeleteUser = function(userId, name, username) {
@@ -996,6 +1007,16 @@ $adminUsername = Auth::username() ?? 'admin';
     adminUserSearch?.addEventListener('input', e => onSearchInput(e.target.value));
     inlineAccountSearch?.addEventListener('input', e => onSearchInput(e.target.value));
 
+    // The top search also works from Home and Logs: Enter opens the user directory
+    // with the same query, then the live filter is applied to the accounts table.
+    adminUserSearch?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !document.getElementById('usersTable')) {
+            const query = adminUserSearch.value.trim();
+            if (query) window.location.href = '<?= APP_URL ?>/public/admin/?view=users&search=' + encodeURIComponent(query);
+        }
+    });
+    if (adminUserSearch?.value && document.getElementById('usersTable')) onSearchInput(adminUserSearch.value);
+
     // Ctrl + K Shortcut
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -1017,6 +1038,18 @@ $adminUsername = Auth::username() ?? 'admin';
         adminNotifDropdown?.classList.remove('open');
         btnAdminNotif?.classList.remove('active');
     });
+
+    <?php if (!empty($studentFormErrors)): ?>
+        openEnrollStudentModal();
+    <?php endif; ?>
+    <?php if (!empty($accountCreated)): ?>
+        Swal.fire({
+            icon: 'success',
+            title: 'Account created',
+            text: <?= json_encode(($accountCreated['type'] === 'accounting' ? 'Accounting staff' : 'Student') . ' account for ' . $accountCreated['name'] . ' was created and credentials were sent by email.') ?>,
+            confirmButtonColor: '#0b3d2e'
+        });
+    <?php endif; ?>
 </script>
 </body>
 </html>

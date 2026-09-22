@@ -225,6 +225,8 @@ $feeDesc  = $p['fee_desc'] ?? 'Tuition Fee Assessment Installment';
 
         /* ── Strict Printable CSS ── */
         @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            html, body { width: 210mm; min-height: 297mm; }
             body {
                 background: #ffffff !important;
                 padding: 0 !important;
@@ -235,8 +237,8 @@ $feeDesc  = $p['fee_desc'] ?? 'Tuition Fee Assessment Installment';
             .receipt-container {
                 box-shadow: none !important;
                 border: 2px solid #0b3d2e !important;
-                max-width: 100% !important;
-                width: 100% !important;
+                max-width: 190mm !important;
+                width: 190mm !important;
                 margin: 0 !important;
                 padding: 24px 30px !important;
                 border-radius: 0 !important;

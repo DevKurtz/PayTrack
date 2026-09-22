@@ -997,6 +997,27 @@ body.landing-body {
   transform: translateY(0) scale(1);
 }
 
+/* Login errors must sit above the sign-in modal (z-index: 20000). */
+.swal2-container {
+  z-index: 21000 !important;
+}
+
+.login-error-banner {
+  margin: 0 0 18px;
+  padding: 10px 12px;
+  color: #b42318;
+  background: #fff1f1;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.login-error-banner strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
 .modal-close-x {
   position: absolute;
   top: 16px;

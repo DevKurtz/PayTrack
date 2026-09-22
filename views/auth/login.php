@@ -448,6 +448,12 @@
                 <p class="modal-header-sub" id="loginModalSub">Enter your Account ID or username and password</p>
             </div>
 
+            <?php if (!empty($error)): ?>
+                <div class="login-error-banner" role="alert">
+                    <strong>Sign in failed.</strong> <?= e($error) ?>
+                </div>
+            <?php endif; ?>
+
             <form method="POST" action="<?= APP_URL ?>/public/" id="loginForm">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="login">
@@ -577,12 +583,19 @@
             if (lastUsername && inputUsername) {
                 inputUsername.value = lastUsername;
             }
-            Swal.fire({
-                icon: 'error',
-                title: 'Sign In Notice',
-                text: flashError,
-                confirmButtonColor: '#0b3d2e'
-            });
+            // The sign-in modal has a high stacking level, so the alert must be
+            // explicitly placed above it. Otherwise it is shown behind the modal.
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sign In Failed',
+                    text: flashError,
+                    confirmButtonText: 'Try again',
+                    confirmButtonColor: '#0b3d2e',
+                    allowOutsideClick: false,
+                    didClose: () => inputPassword?.focus()
+                });
+            }
         }
 
         // ── Custom Required-Field Validation (red highlight instead of browser tooltip) ──

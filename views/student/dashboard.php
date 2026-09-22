@@ -1062,8 +1062,20 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                     }
                 }
 
-                // 2. Outstanding or Cleared Tuition Assessment
-                if ($totalRemaining > 0) {
+                // 2. Assessment status. A newly registered student has a zero balance
+                // only because Accounting has not posted an assessment yet—not because
+                // tuition has been paid in full.
+                if ($isPendingAssessment) {
+                    $studentNotifs[] = [
+                        'type' => 'warning',
+                        'icon' => '⏳',
+                        'title' => 'Tuition Assessment Pending',
+                        'desc' => 'Your account is registered and is waiting for the Accounting Office to post your tuition assessment.',
+                        'time' => 'Account Setup',
+                        'link' => APP_URL . '/public/student/?view=fees',
+                        'unread' => true,
+                    ];
+                } elseif ($totalRemaining > 0) {
                     $studentNotifs[] = [
                         'type' => 'warning',
                         'icon' => '💳',

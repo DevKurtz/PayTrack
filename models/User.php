@@ -21,6 +21,15 @@ class User
         return $row ?: null;
     }
 
+    public static function findByEmail(string $email): ?array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1');
+        $stmt->execute([$email]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public static function create(string $username, string $password, string $role = 'student', string $name = '', string $email = ''): int
     {
         $db   = Database::getInstance();
