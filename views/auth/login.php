@@ -258,7 +258,53 @@
         </div>
     </section>
 
-    <!-- ── 4. Why Choose PayTrack ── -->
+    <!-- ── 4. How It Works (3 Steps) ── -->
+    <section class="steps-section" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-pill">HOW IT WORKS</span>
+                <h2 class="section-title">Get Started in 3 Simple Steps</h2>
+                <p class="section-subtitle">Setting up your PayTrack account is quick and easy. Follow these steps to begin.</p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <div>
+                        <div class="step-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <h4 class="step-title">Create Your Account</h4>
+                        <p class="step-desc">Sign up as a student or parent in just a few minutes using school ID.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <div>
+                        <div class="step-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        </div>
+                        <h4 class="step-title">Add a Payment Method</h4>
+                        <p class="step-desc">Link your bank card, e-wallet, or preferred online payment option.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <div>
+                        <div class="step-icon-box" style="background: #ecfdf5; color: #059669;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <h4 class="step-title">Start Managing Fees</h4>
+                        <p class="step-desc">View balances, make payments, and get notified instantly via email.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── 5. Why Choose PayTrack ── -->
     <section class="why-section" id="about">
         <div class="container">
             <div class="why-grid">
@@ -305,52 +351,6 @@
                             <span>Trusted by students, parents, and schools</span>
                         </li>
                     </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ── 5. How It Works (3 Steps) ── -->
-    <section class="steps-section" id="how-it-works">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-pill">HOW IT WORKS</span>
-                <h2 class="section-title">Get Started in 3 Simple Steps</h2>
-                <p class="section-subtitle">Setting up your PayTrack account is quick and easy. Follow these steps to begin.</p>
-            </div>
-
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-num">1</div>
-                    <div>
-                        <div class="step-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <h4 class="step-title">Create Your Account</h4>
-                        <p class="step-desc">Sign up as a student or parent in just a few minutes using school ID.</p>
-                    </div>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-num">2</div>
-                    <div>
-                        <div class="step-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        </div>
-                        <h4 class="step-title">Add a Payment Method</h4>
-                        <p class="step-desc">Link your bank card, e-wallet, or preferred online payment option.</p>
-                    </div>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-num">3</div>
-                    <div>
-                        <div class="step-icon-box" style="background: #ecfdf5; color: #059669;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        </div>
-                        <h4 class="step-title">Start Managing Fees</h4>
-                        <p class="step-desc">View balances, make payments, and get notified instantly via email.</p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -597,6 +597,58 @@
                 });
             }
         }
+
+        // ── Navigation Link Active Switcher & Smooth Scroll ──
+        const navLinks = document.querySelectorAll('.desktop-nav-menu .nav-link, .mobile-nav-list .mobile-nav-item');
+        const trackedSections = ['home', 'features', 'how-it-works', 'about'];
+
+        function setActiveNav(targetHash) {
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === targetHash) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                const targetHash = this.getAttribute('href');
+                if (targetHash && targetHash.startsWith('#')) {
+                    e.preventDefault();
+                    setActiveNav(targetHash);
+                    
+                    const targetEl = document.querySelector(targetHash);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    if (window.history && window.history.replaceState) {
+                        history.replaceState(null, null, targetHash);
+                    }
+                }
+            });
+        });
+
+        // Keep the selected link aligned with the section directly below the sticky header.
+        const sectionElements = trackedSections.map(id => document.getElementById(id)).filter(Boolean);
+        let scrollSpyFrame = 0;
+        function updateActiveSection() {
+            scrollSpyFrame = 0;
+            const header = document.querySelector('.landing-header');
+            const activationLine = (header?.getBoundingClientRect().bottom || 0) + 24;
+            let activeSection = sectionElements[0];
+            sectionElements.forEach(section => {
+                if (section.getBoundingClientRect().top <= activationLine) activeSection = section;
+            });
+            if (activeSection) setActiveNav('#' + activeSection.id);
+        }
+        window.addEventListener('scroll', () => {
+            if (!scrollSpyFrame) scrollSpyFrame = requestAnimationFrame(updateActiveSection);
+        }, { passive: true });
+        window.addEventListener('resize', updateActiveSection);
+        updateActiveSection();
 
         // ── Custom Required-Field Validation (red highlight instead of browser tooltip) ──
         const loginForm = document.getElementById('loginForm');

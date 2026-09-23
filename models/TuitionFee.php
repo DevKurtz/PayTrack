@@ -108,18 +108,31 @@ class TuitionFee
         return $feeId;
     }
 
+    public static function findLatestByStudentId(int $studentId): ?array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM tuition_fees WHERE student_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$studentId]);
+        $row = $stmt->fetch();
+        if ($row) {
+            $row['items'] = self::getItems($row['id']);
+        }
+        return $row ?: null;
+    }
+
     public static function recordPayment(int $feeId, float $amount): void
     {
         $db = Database::getInstance();
         $fee = self::findById($feeId);
         if (!$fee) return;
 
-        $newPaid = (float) $fee['amount_paid'] + $amount;
-        $total = (float) $fee['total_amount'];
+        $newPaid = round((float) $fee['amount_paid'] + $amount, 2);
+        $total = round((float) $fee['total_amount'], 2);
 
         $status = 'unpaid';
         if ($newPaid >= $total) {
             $status = 'paid';
+            $newPaid = $total; // Cap paid amount at total to ensure clean 0 remaining balance
         } elseif ($newPaid > 0) {
             $status = 'partial';
         }
@@ -142,6 +155,7 @@ class TuitionFee
         foreach ($items as $it) {
             $totalAmount += max(0.0, (float)($it['amount'] ?? 0));
         }
+        $totalAmount = round($totalAmount, 2);
 
         $stmt = $db->prepare(
             "INSERT INTO tuition_fees (student_id, school_year, semester, description, total_amount, amount_paid, due_date, status)
@@ -157,12 +171,66 @@ class TuitionFee
             foreach ($items as $it) {
                 $catId = !empty($it['fee_category_id']) && (int)$it['fee_category_id'] > 0 ? (int)$it['fee_category_id'] : null;
                 $catName = trim($it['category_name'] ?? 'Fee Item');
-                $amt = max(0.0, (float)($it['amount'] ?? 0));
+                $amt = round(max(0.0, (float)($it['amount'] ?? 0)), 2);
                 $itemStmt->execute([$feeId, $catId, $catName, $amt]);
             }
         }
 
         return $feeId;
+    }
+
+    public static function updateCustomAssessment(
+        int $feeId,
+        int $studentId,
+        string $schoolYear,
+        string $semester,
+        string $description,
+        ?string $dueDate,
+        array $items
+    ): bool {
+        $db = Database::getInstance();
+        $existing = self::findById($feeId);
+        if (!$existing) {
+            return false;
+        }
+
+        $totalAmount = 0.0;
+        foreach ($items as $it) {
+            $totalAmount += max(0.0, (float)($it['amount'] ?? 0));
+        }
+        $totalAmount = round($totalAmount, 2);
+        $paidAmount  = round((float)($existing['amount_paid'] ?? 0), 2);
+
+        $status = 'unpaid';
+        if ($paidAmount >= $totalAmount && $totalAmount > 0) {
+            $status = 'paid';
+        } elseif ($paidAmount > 0) {
+            $status = 'partial';
+        }
+
+        $stmt = $db->prepare(
+            "UPDATE tuition_fees 
+             SET school_year = ?, semester = ?, description = ?, total_amount = ?, due_date = ?, status = ?
+             WHERE id = ?"
+        );
+        $stmt->execute([$schoolYear, $semester, $description, $totalAmount, $dueDate ?: null, $status, $feeId]);
+
+        // Delete old items and re-insert updated items
+        $db->prepare("DELETE FROM tuition_fee_items WHERE tuition_fee_id = ?")->execute([$feeId]);
+
+        if (!empty($items)) {
+            $itemStmt = $db->prepare(
+                "INSERT INTO tuition_fee_items (tuition_fee_id, fee_category_id, category_name, amount) VALUES (?, ?, ?, ?)"
+            );
+            foreach ($items as $it) {
+                $catId = !empty($it['fee_category_id']) && (int)$it['fee_category_id'] > 0 ? (int)$it['fee_category_id'] : null;
+                $catName = trim($it['category_name'] ?? 'Fee Item');
+                $amt = round(max(0.0, (float)($it['amount'] ?? 0)), 2);
+                $itemStmt->execute([$feeId, $catId, $catName, $amt]);
+            }
+        }
+
+        return true;
     }
 
     public static function delete(int $id): void

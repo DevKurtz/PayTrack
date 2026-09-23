@@ -15,6 +15,111 @@ $accountingName = Auth::username() ?? 'accounting';
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/portal-chrome.css?v=<?= filemtime(__DIR__ . '/../../assets/css/portal-chrome.css') ?>">
     <style>
+        /* ── Fullscreen Processing / Email Loading Overlay ── */
+        .paytrack-loading-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .paytrack-loading-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .paytrack-loading-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 36px 32px;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
+            transform: scale(0.92);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .paytrack-loading-backdrop.active .paytrack-loading-card {
+            transform: scale(1);
+        }
+        .paytrack-spinner-ring {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            border: 4px solid #d1fae5;
+            border-top-color: #059669;
+            border-right-color: #0b3d2e;
+            animation: paytrackSpin 0.85s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes paytrackSpin {
+            to { transform: rotate(360deg); }
+        }
+        .paytrack-loading-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .paytrack-loading-desc {
+            font-size: 13.5px;
+            color: #64748b;
+            line-height: 1.55;
+            margin: 0 0 22px;
+        }
+        .paytrack-loading-bar-wrapper {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .paytrack-loading-bar-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 40%;
+            background: linear-gradient(90deg, #10b981, #0b3d2e);
+            border-radius: 999px;
+            animation: paytrackBarIndeterminate 1.4s infinite ease-in-out;
+        }
+        @keyframes paytrackBarIndeterminate {
+            0% { left: -40%; width: 40%; }
+            50% { left: 30%; width: 60%; }
+            100% { left: 100%; width: 40%; }
+        }
+        .paytrack-inline-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: paytrackSpin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        .btn-account-security {
+            width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            margin-bottom: 9px; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 8px; color: #334155; font-size: 13px; font-weight: 650;
+            cursor: pointer; transition: background .15s ease, border-color .15s ease;
+        }
+        .btn-account-security:hover { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+
         .badge-pending {
             background: #fef3c7;
             color: #92400e;
@@ -83,6 +188,59 @@ $accountingName = Auth::username() ?? 'accounting';
             justify-content: space-between;
             margin-top: 14px;
         }
+        .assessment-modal-heading {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: -26px -24px 20px;
+            padding: 23px 58px 20px 24px;
+            border-bottom: 1px solid #d1fae5;
+            background: radial-gradient(circle at 100% 0, rgba(16,185,129,.18), transparent 42%), linear-gradient(135deg, #f0fdf4 0%, #f8fafc 70%);
+            border-radius: 14px 14px 0 0;
+        }
+        .assessment-modal-icon {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(145deg, #10b981, #065f46);
+            box-shadow: 0 8px 18px rgba(5,150,105,.22);
+        }
+        .assessment-modal-eyebrow {
+            display: block;
+            margin-bottom: 4px;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.15px;
+            text-transform: uppercase;
+        }
+        .assessment-modal-heading .modal-header-title {
+            margin: 0 0 4px;
+            font-size: 20px;
+            letter-spacing: -.35px;
+        }
+        .assessment-modal-heading .modal-header-sub {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+        .fee-category-row input[type="number"]:invalid,
+        .fee-category-row input[type="number"].amount-invalid {
+            border-color: #ef4444;
+            background: #fff7f7;
+            box-shadow: 0 0 0 2px rgba(239,68,68,.1);
+        }
+        @media (max-width: 560px) {
+            .assessment-modal-heading { margin: -20px -14px 18px; padding: 19px 42px 17px 15px; gap: 11px; }
+            .assessment-modal-icon { width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px; }
+            .assessment-modal-heading .modal-header-title { font-size: 17px; }
+        }
     </style>
 </head>
 <body class="admin-body">
@@ -141,6 +299,9 @@ $accountingName = Auth::username() ?? 'accounting';
         </ul>
 
         <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-account-security" id="btnOpenPasswordModal">
+                <span aria-hidden="true">&#128274;</span><span>Change Password</span>
+            </button>
             <button type="button" class="btn-logout-prominent" id="btnLogout">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -295,18 +456,18 @@ $accountingName = Auth::username() ?? 'accounting';
                 <div class="metric-summary-grid">
                     <div class="metric-summary-card">
                         <div class="metric-summary-label">Total Revenue Collected</div>
-                        <div class="metric-summary-value" style="color:#065f46;"><?= peso($totalRevenue) ?></div>
+                        <div class="metric-summary-value" id="kpiTotalRevenue" style="color:#065f46;"><?= peso($totalRevenue) ?></div>
                         <div class="metric-summary-sub" style="color:#059669;font-weight:600;"><?= count($payments) ?> verified payments</div>
                     </div>
                     <div class="metric-summary-card">
                         <div class="metric-summary-label">Total Assessed Tuition</div>
-                        <div class="metric-summary-value" style="color:#1e3a8a;"><?= peso($totalAssessed) ?></div>
+                        <div class="metric-summary-value" id="kpiTotalAssessed" style="color:#1e3a8a;"><?= peso($totalAssessed) ?></div>
                         <div class="metric-summary-sub"><?= count($fees) ?> active term assessments</div>
                     </div>
                     <div class="metric-summary-card">
                         <div class="metric-summary-label">Outstanding Receivables</div>
-                        <div class="metric-summary-value" style="color:#ea580c;"><?= peso($totalReceivables) ?></div>
-                        <div class="metric-summary-sub"><?= $collectionRate ?>% collection rate</div>
+                        <div class="metric-summary-value" id="kpiTotalReceivables" style="color:#ea580c;"><?= peso($totalReceivables) ?></div>
+                        <div class="metric-summary-sub" id="kpiCollectionRate"><?= $collectionRate ?>% collection rate</div>
                     </div>
                     <div class="metric-summary-card">
                         <div class="metric-summary-label">Enrolled Students</div>
@@ -479,7 +640,7 @@ $accountingName = Auth::username() ?? 'accounting';
                                             $avatarColor  = $avatarColors[$idx % count($avatarColors)];
                                             $initials = strtoupper(mb_substr($s['first_name'],0,1) . mb_substr($s['last_name'],0,1));
                                         ?>
-                                        <tr data-status="<?= $hasAssmt ? 'assessed' : 'pending' ?>">
+                                        <tr data-status="<?= $hasAssmt ? 'assessed' : 'pending' ?>" data-student-id="<?= $s['id'] ?>">
                                             <td style="color:#94a3b8; font-size:12px; width:36px;"><?= $idx + 1 ?></td>
                                             <td><code><?= e($s['student_id']) ?></code></td>
                                             <td>
@@ -505,7 +666,7 @@ $accountingName = Auth::username() ?? 'accounting';
                                             <td><?= $hasAssmt ? '<strong>' . peso($totalAmt) . '</strong>' : '<span style="color:#94a3b8;">—</span>' ?></td>
                                             <td>
                                                 <?php if ($hasAssmt): ?>
-                                                    <strong style="color: <?= $remAmt > 0 ? '#b45309' : '#166534' ?>;"><?= peso($remAmt) ?></strong>
+                                                    <strong class="student-balance-cell" style="color: <?= $remAmt > 0 ? '#b45309' : '#166534' ?>;"><?= peso($remAmt) ?></strong>
                                                 <?php else: ?>
                                                     <span style="color:#94a3b8;">—</span>
                                                 <?php endif; ?>
@@ -710,7 +871,7 @@ $accountingName = Auth::username() ?? 'accounting';
                                 <?php else: ?>
                                     <?php foreach ($fees as $f): ?>
                                         <?php $fRem = max(0, (float)$f['total_amount'] - (float)$f['amount_paid']); ?>
-                                        <tr>
+                                        <tr data-fee-id="<?= (int) $f['id'] ?>">
                                             <td><code>#TF-<?= $f['id'] ?></code></td>
                                             <td>
                                                 <strong><?= e($f['first_name'] . ' ' . $f['last_name']) ?></strong>
@@ -720,10 +881,10 @@ $accountingName = Auth::username() ?? 'accounting';
                                                 <strong><?= e($f['description']) ?></strong>
                                                 <div style="font-size: 11px; color: #94a3b8;">Due: <?= !empty($f['due_date']) ? date('M d, Y', strtotime($f['due_date'])) : 'Open' ?></div>
                                             </td>
-                                            <td><strong><?= peso($f['total_amount']) ?></strong></td>
-                                            <td style="color: #059669; font-weight: 700;"><?= peso($f['amount_paid']) ?></td>
-                                            <td style="color: <?= $fRem > 0 ? '#b45309' : '#166534' ?>; font-weight: 700;"><?= peso($fRem) ?></td>
-                                            <td>
+                                            <td><strong class="assessment-total"><?= peso($f['total_amount']) ?></strong></td>
+                                            <td class="assessment-paid" style="color: #059669; font-weight: 700;"><?= peso($f['amount_paid']) ?></td>
+                                            <td class="assessment-remaining" style="color: <?= $fRem > 0 ? '#b45309' : '#166534' ?>; font-weight: 700;"><?= peso($fRem) ?></td>
+                                            <td class="assessment-status">
                                                 <?php if ($f['status'] === 'paid'): ?>
                                                     <span class="badge success">Paid</span>
                                                 <?php elseif ($f['status'] === 'partial'): ?>
@@ -937,19 +1098,56 @@ $accountingName = Auth::username() ?? 'accounting';
     </div>
 </div>
 
+<!-- ACCOUNT SECURITY: CHANGE PASSWORD -->
+<div class="modal-backdrop" id="accountPasswordModal" aria-hidden="true">
+    <div class="modal-window" style="max-width: 460px;">
+        <button type="button" class="modal-close-x" id="btnClosePasswordModal" aria-label="Close">&times;</button>
+        <h2 class="modal-header-title" style="font-size:20px;margin-bottom:6px;">Change Password</h2>
+        <p class="modal-header-sub" style="margin:0 0 20px;color:#64748b;">Confirm your current password to secure your Accounting account.</p>
+        <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=home" id="accountPasswordForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="change_password">
+            <div class="form-group">
+                <label class="form-label" for="currentPassword">Current Password</label>
+                <input class="form-control" type="password" name="current_password" id="currentPassword" autocomplete="current-password" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="newPassword">New Password</label>
+                <input class="form-control" type="password" name="new_password" id="newPassword" minlength="8" autocomplete="new-password" required>
+                <small style="display:block;margin-top:5px;color:#64748b;">Use at least 8 characters.</small>
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                <input class="form-control" type="password" name="confirm_password" id="confirmPassword" minlength="8" autocomplete="new-password" required>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn" id="btnCancelPasswordModal">Cancel</button>
+                <button type="submit" class="btn" style="background:#0b3d2e;color:#fff;font-weight:700;">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- ==================================================== -->
 <!-- MODAL: ASSIGN TUITION & CLASS DETAILS WITH EDITABLE FEES -->
 <!-- ==================================================== -->
 <div class="modal-backdrop" id="assignTuitionModal">
     <div class="modal-window" style="max-width: 620px;">
         <button class="modal-close-x" id="btnCloseAssignModal">&times;</button>
-        <h2 class="modal-header-title">Tuition Fee Assessment &amp; Class Details</h2>
-        <p class="modal-header-sub" id="assignModalStudentLabel">Student: Juan Dela Cruz (2023-53512)</p>
+        <div class="assessment-modal-heading">
+            <div class="assessment-modal-icon" aria-hidden="true">₱</div>
+            <div>
+                <span class="assessment-modal-eyebrow">Tuition Management</span>
+                <h2 class="modal-header-title">Assessment &amp; Class Details</h2>
+                <p class="modal-header-sub" id="assignModalStudentLabel">Student: Juan Dela Cruz (2023-53512)</p>
+            </div>
+        </div>
 
         <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=students" id="assignTuitionForm">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="assign_tuition">
             <input type="hidden" name="student_id" id="assignStudentId" value="">
+            <input type="hidden" name="fee_id" id="assignFeeId" value="">
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                 <div class="form-group">
@@ -1011,7 +1209,11 @@ $accountingName = Auth::username() ?? 'accounting';
                                        min="0" 
                                        name="fee_amount[<?= $cat['id'] ?>]" 
                                        id="amt_<?= $cat['id'] ?>" 
+                                       data-variable="<?= !empty($cat['is_variable']) ? '1' : '0' ?>"
                                        value="<?= number_format($cat['default_amount'], 2, '.', '') ?>" 
+                                       inputmode="decimal"
+                                       required
+                                       aria-label="<?= e($cat['name']) ?> amount, maximum two decimal places"
                                        oninput="recalcAssessmentTotal()">
                             </div>
                         </div>
@@ -1037,7 +1239,7 @@ $accountingName = Auth::username() ?? 'accounting';
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn" id="btnCancelAssignModal">Cancel</button>
-                <button type="submit" class="btn" style="background: #0b3d2e; color: #fff; font-weight: 700; padding: 10px 22px;">
+                <button type="submit" class="btn" id="btnSubmitAssignModal" style="background: #0b3d2e; color: #fff; font-weight: 700; padding: 10px 22px;">
                     Post &amp; Save Assessment
                 </button>
             </div>
@@ -1054,23 +1256,24 @@ $accountingName = Auth::username() ?? 'accounting';
         <h2 class="modal-header-title">Record Counter Payment</h2>
         <p class="modal-header-sub">Process cash, GCash, or bank deposit at Accounting Cashier.</p>
 
-        <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=transactions">
+        <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=transactions" id="manualPaymentForm">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="record_payment">
 
             <div class="form-group" style="margin-bottom: 14px;">
                 <label class="form-label" for="payFeeId">Select Student Assessment *</label>
                 <select class="form-control" name="fee_id" id="payFeeId" required>
-                    <option value="">-- Choose student assessment --</option>
+                    <option value="" data-balance="0">-- Choose student assessment --</option>
                     <?php foreach ($fees as $feeItem): ?>
                         <?php $rem = max(0, (float)$feeItem['total_amount'] - (float)$feeItem['amount_paid']); ?>
                         <?php if ($rem > 0): ?>
-                            <option value="<?= $feeItem['id'] ?>">
+                            <option value="<?= $feeItem['id'] ?>" data-balance="<?= $rem ?>" data-student="<?= e($feeItem['first_name'] . ' ' . $feeItem['last_name']) ?>">
                                 <?= e($feeItem['first_name'] . ' ' . $feeItem['last_name']) ?> (<?= e($feeItem['student_num']) ?>) — Balance: <?= peso($rem) ?>
                             </option>
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </select>
+                <div id="payFeeBalanceHint" style="font-size: 12px; color: #b45309; font-weight: 600; margin-top: 4px; display: none;"></div>
             </div>
 
             <div class="form-group" style="margin-bottom: 14px;">
@@ -1097,9 +1300,26 @@ $accountingName = Auth::username() ?? 'accounting';
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn" onclick="document.getElementById('manualPaymentModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn" style="background: #0b3d2e; color: #fff; font-weight: 700;">Record &amp; Issue Receipt</button>
+                <button type="submit" class="btn" id="btnSubmitManualPay" style="background: #0b3d2e; color: #fff; font-weight: 700;">Record &amp; Issue Receipt</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- FULLSCREEN ACCOUNTING ACTION LOADING MODAL -->
+<!-- ========================================== -->
+<div class="paytrack-loading-backdrop" id="accountingLoadingOverlay">
+    <div class="paytrack-loading-card">
+        <div class="paytrack-spinner-ring"></div>
+        <div class="paytrack-loading-title" id="accountingLoadingTitle">Processing Transaction...</div>
+        <p class="paytrack-loading-desc" id="accountingLoadingDesc">
+            Please wait while records are updated and notification emails are being delivered.
+        </p>
+        <div class="paytrack-loading-bar-wrapper">
+            <div class="paytrack-loading-bar-fill"></div>
+        </div>
+        <small style="color: #94a3b8; font-size: 11px;">Do not close or refresh this page.</small>
     </div>
 </div>
 
@@ -1216,6 +1436,32 @@ $accountingName = Auth::username() ?? 'accounting';
         sidebarOverlay.addEventListener('click', closeSidebar);
     }
 
+    // ── Change Password Modal ──
+    const accountPasswordModal = document.getElementById('accountPasswordModal');
+    const closePasswordModal = () => {
+        accountPasswordModal?.classList.remove('active');
+        accountPasswordModal?.setAttribute('aria-hidden', 'true');
+    };
+    document.getElementById('btnOpenPasswordModal')?.addEventListener('click', () => {
+        accountPasswordModal?.classList.add('active');
+        accountPasswordModal?.setAttribute('aria-hidden', 'false');
+        document.getElementById('currentPassword')?.focus();
+    });
+    document.getElementById('btnClosePasswordModal')?.addEventListener('click', closePasswordModal);
+    document.getElementById('btnCancelPasswordModal')?.addEventListener('click', closePasswordModal);
+    accountPasswordModal?.addEventListener('click', event => {
+        if (event.target === accountPasswordModal) closePasswordModal();
+    });
+    document.getElementById('accountPasswordForm')?.addEventListener('submit', event => {
+        const newPassword = document.getElementById('newPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+        confirmPassword.setCustomValidity(newPassword.value === confirmPassword.value ? '' : 'The passwords do not match.');
+        if (!confirmPassword.reportValidity()) event.preventDefault();
+    });
+    document.getElementById('confirmPassword')?.addEventListener('input', function () {
+        this.setCustomValidity(this.value === document.getElementById('newPassword').value ? '' : 'The passwords do not match.');
+    });
+
     // Logout
     document.getElementById('btnLogout')?.addEventListener('click', () => {
         Swal.fire({
@@ -1240,13 +1486,62 @@ $accountingName = Auth::username() ?? 'accounting';
 
     window.openAssignAssessmentModal = function(student) {
         if (!assignTuitionModal) return;
+        const currentFee = student.primary_fee || null;
         document.getElementById('assignStudentId').value = student.id;
+        document.getElementById('assignFeeId').value = currentFee ? currentFee.id : '';
         document.getElementById('assignModalStudentLabel').textContent = 
             `Student: ${student.first_name} ${student.last_name} (${student.student_id})`;
         document.getElementById('assignGradeLevel').value = student.grade_level || 'BSCS 11A1';
-        document.getElementById('assignSchoolYear').value = student.school_year || '<?= date('Y') . '-' . (date('Y') + 1) ?>';
-        
+        document.getElementById('assignSchoolYear').value = currentFee?.school_year || student.school_year || '<?= date('Y') . '-' . (date('Y') + 1) ?>';
+        const semesterInput = document.getElementById('assignSemester');
+        const supportedSemesters = Array.from(semesterInput.options).map(option => option.value);
+        semesterInput.value = currentFee && supportedSemesters.includes(currentFee.semester) ? currentFee.semester : '1st Semester';
         updateAssessmentDesc();
+        if (currentFee) {
+            document.getElementById('assignDescription').value = currentFee.description || document.getElementById('assignDescription').value;
+            document.getElementById('assignDueDate').value = currentFee.due_date || '';
+
+            // Reopen the existing item breakdown, so its sum stays equal to the
+            // current assessment total instead of resetting to category defaults.
+            const existingItems = Array.isArray(currentFee.items) ? currentFee.items : [];
+            document.querySelectorAll('.fee-category-row').forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                const amount = row.querySelector('input[type="number"]');
+                const categoryId = Number((checkbox.name.match(/\[(\d+)\]/) || [])[1]);
+                const categoryName = row.querySelector('label')?.textContent.trim();
+                const item = existingItems.find(existing => Number(existing.fee_category_id) === categoryId)
+                    || existingItems.find(existing => !existing.fee_category_id && existing.category_name === categoryName);
+                checkbox.checked = Boolean(item);
+                amount.value = item ? Number(item.amount).toFixed(2) : '0.00';
+                amount.disabled = !item;
+                row.classList.toggle('excluded', !item);
+                validateAssessmentAmount(amount);
+            });
+
+            // Keep the existing assessment total authoritative. The variable
+            // tuition category receives any remainder after fixed fee items.
+            const variableInput = document.querySelector('.fee-category-row input[data-variable="1"]');
+            if (variableInput && variableInput.closest('.fee-category-row').querySelector('input[type="checkbox"]').checked) {
+                const fixedTotal = Array.from(document.querySelectorAll('.fee-category-row input[type="checkbox"]:checked'))
+                    .reduce((sum, checkbox) => {
+                        const amount = checkbox.closest('.fee-category-row').querySelector('input[type="number"]');
+                        return amount === variableInput ? sum : sum + (Number(amount.value) || 0);
+                    }, 0);
+                variableInput.value = Math.max(0, Number(currentFee.total_amount) - fixedTotal).toFixed(2);
+                validateAssessmentAmount(variableInput);
+            }
+        } else {
+            document.getElementById('assignDueDate').value = '<?= date('Y-m-d', strtotime('+30 days')) ?>';
+            document.querySelectorAll('.fee-category-row').forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                const amount = row.querySelector('input[type="number"]');
+                checkbox.checked = true;
+                amount.disabled = false;
+                row.classList.remove('excluded');
+                amount.value = amount.defaultValue;
+                validateAssessmentAmount(amount);
+            });
+        }
         recalcAssessmentTotal();
         assignTuitionModal.classList.add('active');
     };
@@ -1282,14 +1577,32 @@ $accountingName = Auth::username() ?? 'accounting';
         }
     };
 
+    function validateAssessmentAmount(input) {
+        const value = String(input.value || '').trim();
+        const valid = /^\d+(?:\.\d{1,2})?$/.test(value) && Number.isFinite(Number(value)) && Number(value) >= 0;
+        input.classList.toggle('amount-invalid', value !== '' && !valid);
+        input.setCustomValidity(value !== '' && !valid ? 'Enter a non-negative amount with no more than 2 decimal places.' : '');
+        return valid;
+    }
+
+    document.querySelectorAll('.fee-category-row input[type="number"]').forEach(input => {
+        input.addEventListener('keydown', event => {
+            if (['-', '+', 'e', 'E'].includes(event.key)) event.preventDefault();
+        });
+        input.addEventListener('input', () => {
+            validateAssessmentAmount(input);
+            recalcAssessmentTotal();
+        });
+        validateAssessmentAmount(input);
+    });
+
     window.recalcAssessmentTotal = function() {
         let total = 0;
         document.querySelectorAll('.fee-category-row').forEach(row => {
             const chk = row.querySelector('input[type="checkbox"]');
             const num = row.querySelector('input[type="number"]');
             if (chk && chk.checked && num) {
-                const val = parseFloat(num.value) || 0;
-                total += Math.max(0, val);
+                if (validateAssessmentAmount(num)) total += Number(num.value || 0);
             }
         });
         const disp = document.getElementById('computedTotalDisplay');
@@ -1380,6 +1693,205 @@ $accountingName = Auth::username() ?? 'accounting';
             }
         });
     }
+
+    // ── Assign Tuition Form – loading overlay on submit ──
+    const assignTuitionForm = document.getElementById('assignTuitionForm');
+    const btnSubmitAssignModal = document.getElementById('btnSubmitAssignModal');
+    const accountingLoadingOverlay = document.getElementById('accountingLoadingOverlay');
+    const accountingLoadingTitle = document.getElementById('accountingLoadingTitle');
+    const accountingLoadingDesc = document.getElementById('accountingLoadingDesc');
+
+    if (assignTuitionForm) {
+        assignTuitionForm.addEventListener('submit', function(e) {
+            const invalidAmount = Array.from(assignTuitionForm.querySelectorAll('.fee-category-row input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.closest('.fee-category-row')?.querySelector('input[type="number"]'))
+                .find(input => input && !validateAssessmentAmount(input));
+            if (invalidAmount) {
+                e.preventDefault();
+                invalidAmount.focus();
+                invalidAmount.reportValidity();
+                return;
+            }
+            // Basic client-side check: at least one category checked
+            const anyChecked = assignTuitionForm.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+            if (!anyChecked) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'No Fee Selected', text: 'Please select at least one fee category.' });
+                return;
+            }
+            // Show loading overlay
+            if (accountingLoadingTitle) accountingLoadingTitle.textContent = 'Sending Assessment…';
+            if (accountingLoadingDesc) accountingLoadingDesc.textContent = 'Saving tuition data and sending email notification to student. Please wait.';
+            if (accountingLoadingOverlay) accountingLoadingOverlay.style.display = 'flex';
+            if (btnSubmitAssignModal) { btnSubmitAssignModal.disabled = true; btnSubmitAssignModal.textContent = 'Processing…'; }
+        });
+    }
+
+    // ── Manual Payment Form – loading overlay on submit ──
+    const manualPaymentForm = document.getElementById('manualPaymentForm');
+    const btnSubmitManualPay = document.getElementById('btnSubmitManualPay');
+
+    if (manualPaymentForm) {
+        manualPaymentForm.addEventListener('submit', function(e) {
+            const amtInput = manualPaymentForm.querySelector('#payAmount');
+            const amt = parseFloat(amtInput ? amtInput.value : 0);
+            if (!amt || amt <= 0) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'Invalid Amount', text: 'Please enter a valid payment amount greater than 0.' });
+                return;
+            }
+            if (accountingLoadingTitle) accountingLoadingTitle.textContent = 'Recording Payment…';
+            if (accountingLoadingDesc) accountingLoadingDesc.textContent = 'Saving payment record and sending receipt email. Please wait.';
+            if (accountingLoadingOverlay) accountingLoadingOverlay.style.display = 'flex';
+            if (btnSubmitManualPay) { btnSubmitManualPay.disabled = true; btnSubmitManualPay.textContent = 'Processing…'; }
+        });
+    }
+
+    // ── payFeeId: show balance hint + set max on amount input ──
+    const payFeeIdSelect = document.getElementById('payFeeId');
+    const payFeeBalanceHint = document.getElementById('payFeeBalanceHint');
+    const payAmountInput = document.getElementById('payAmount');
+
+    if (payFeeIdSelect) {
+        payFeeIdSelect.addEventListener('change', function() {
+            const selected = this.options[this.selectedIndex];
+            const remaining = parseFloat(selected.dataset.balance || 0);
+            const studentName = selected.dataset.student || '';
+
+            if (payFeeBalanceHint) {
+                if (this.value) {
+                    payFeeBalanceHint.textContent = `Remaining balance for ${studentName}: ₱${remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    payFeeBalanceHint.style.display = 'block';
+                } else {
+                    payFeeBalanceHint.style.display = 'none';
+                }
+            }
+
+            if (payAmountInput) {
+                payAmountInput.value = '';
+                if (this.value && remaining > 0) {
+                    payAmountInput.max = remaining;
+                    payAmountInput.removeAttribute('disabled');
+                } else {
+                    payAmountInput.removeAttribute('max');
+                    payAmountInput.setAttribute('disabled', 'disabled');
+                    if (this.value && remaining <= 0 && payFeeBalanceHint) {
+                        payFeeBalanceHint.textContent = 'This fee is already fully paid.';
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Negative / invalid character blocker on payAmount ──
+    if (payAmountInput) {
+        payAmountInput.addEventListener('keydown', function(e) {
+            if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
+        });
+        payAmountInput.addEventListener('input', function() {
+            // Strip anything that slipped through (e.g. paste)
+            this.value = this.value.replace(/[^0-9.]/g, '');
+            // Remove extra decimal points
+            const parts = this.value.split('.');
+            if (parts.length > 2) this.value = parts[0] + '.' + parts.slice(1).join('');
+            // Enforce max
+            const max = parseFloat(this.max);
+            if (!isNaN(max) && parseFloat(this.value) > max) this.value = max.toFixed(2);
+        });
+    }
+
+    // ── Real-time polling (every 15 s) ──
+    // Ignore payments already present when this page was rendered. Only payments
+    // arriving after this snapshot should trigger a live notification.
+    let lastPaymentId = <?= !empty($payments) ? (int) max(array_map(static fn($payment) => (int)($payment['id'] ?? 0), $payments)) : 0 ?>;
+    async function pollRealtimeFeed() {
+        try {
+            const resp = await fetch(`<?= APP_URL ?>/public/accounting/?action=realtime_feed&last_payment_id=${lastPaymentId}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            // Update KPI cards
+            if (data.metrics) {
+                const rev = document.getElementById('kpiTotalRevenue');
+                const rec = document.getElementById('kpiTotalReceivables');
+                const col = document.getElementById('kpiCollectionRate');
+                if (rev && data.metrics.formatted_revenue)     rev.textContent = data.metrics.formatted_revenue;
+                if (rec && data.metrics.formatted_receivables) rec.textContent = data.metrics.formatted_receivables;
+                if (col && data.metrics.formatted_collection_rate) col.textContent = data.metrics.formatted_collection_rate;
+            }
+
+            // Update per-student balance cells
+            if (data.students && Array.isArray(data.students)) {
+                data.students.forEach(s => {
+                    const cell = document.querySelector(`tr[data-student-id="${s.id}"] .student-balance-cell`);
+                    if (cell && s.formatted_balance) cell.textContent = s.formatted_balance;
+                });
+            }
+
+            // Show toast for new payments
+            if (data.new_payments && data.new_payments.length > 0) {
+                data.new_payments.forEach(p => {
+                    lastPaymentId = Math.max(lastPaymentId, p.id);
+                    // Show a small non-blocking toast using SweetAlert2 mixin
+                    Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true,
+                    }).fire({
+                        icon: 'success',
+                        title: `New payment: ₱${parseFloat(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} from ${p.first_name} ${p.last_name}`
+                    });
+                });
+
+                // Mark the notification bell and its menu as having new activity.
+                const notifButton = document.getElementById('btnAccNotif');
+                if (notifButton && !notifButton.querySelector('.notif-dot-red')) {
+                    const dot = document.createElement('span');
+                    dot.className = 'notif-dot-red';
+                    notifButton.appendChild(dot);
+                }
+                const notifBadge = document.querySelector('#accNotifDropdown .notif-header-badge');
+                if (notifBadge) {
+                    const currentUnread = parseInt(notifBadge.textContent, 10) || 0;
+                    notifBadge.textContent = `${currentUnread + data.new_payments.length} new`;
+                }
+            }
+
+            // Update each tuition assessment row, including amount paid, balance,
+            // and status. This is the view where accounting tracks posted tuition.
+            if (data.assessments) {
+                Object.entries(data.assessments).forEach(([feeId, assessment]) => {
+                    const row = document.querySelector(`tr[data-fee-id="${feeId}"]`);
+                    if (!row) return;
+                    const total = row.querySelector('.assessment-total');
+                    const paid = row.querySelector('.assessment-paid');
+                    const remaining = row.querySelector('.assessment-remaining');
+                    const status = row.querySelector('.assessment-status');
+                    if (total) total.textContent = assessment.formatted_total;
+                    if (paid) paid.textContent = assessment.formatted_paid;
+                    if (remaining) {
+                        remaining.textContent = assessment.formatted_remaining;
+                        remaining.style.color = assessment.remaining_balance > 0 ? '#b45309' : '#166534';
+                    }
+                    if (status) {
+                        const badge = status.querySelector('.badge');
+                        if (badge) {
+                            badge.className = `badge ${assessment.status === 'paid' ? 'success' : assessment.status === 'partial' ? 'warning' : 'danger'}`;
+                            badge.textContent = assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1);
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            // Silently ignore network errors (offline, XAMPP stopped, etc.)
+        }
+    }
+
+    // Start polling after 15 s so initial load doesn't get double-hit
+    setInterval(pollRealtimeFeed, 15000);
+
 </script>
 </body>
 </html>

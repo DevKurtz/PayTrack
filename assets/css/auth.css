@@ -158,10 +158,20 @@ body.landing-body {
 
 /* ── Hero Section ── */
 .hero-section {
-  padding: 60px 0 80px;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 0;
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
+  scroll-margin-top: 80px;
+}
+
+.hero-section > .container {
+  width: 100%;
 }
 
 .hero-grid {
@@ -390,8 +400,18 @@ body.landing-body {
 
 /* ── Features Section (4 Cards) ── */
 .features-section {
-  padding: 80px 0;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
   background: #ffffff;
+  box-sizing: border-box;
+  scroll-margin-top: 80px;
+}
+
+.features-section > .container {
+  width: 100%;
 }
 
 .features-grid {
@@ -456,10 +476,20 @@ body.landing-body {
 
 /* ── Split Banner / Why Choose Us ── */
 .why-section {
-  padding: 90px 0;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
   background: #f8fafc;
   border-top: 1px solid #f1f5f9;
   border-bottom: 1px solid #f1f5f9;
+  box-sizing: border-box;
+  scroll-margin-top: 80px;
+}
+
+.why-section > .container {
+  width: 100%;
 }
 
 .why-grid {
@@ -497,8 +527,18 @@ body.landing-body {
 
 /* ── Steps Section ── */
 .steps-section {
-  padding: 90px 0;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
   background: #ffffff;
+  box-sizing: border-box;
+  scroll-margin-top: 80px;
+}
+
+.steps-section > .container {
+  width: 100%;
 }
 
 .steps-grid {

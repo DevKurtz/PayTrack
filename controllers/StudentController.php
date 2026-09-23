@@ -20,26 +20,39 @@ class StudentController
         $student = Student::findByUserId($userId);
         if (!$student) redirect(APP_URL . '/public/student/');
 
-        $feeId = (int) ($_POST['fee_id'] ?? 0);
-        $amount = (float) ($_POST['amount'] ?? 0);
+        $feeId     = (int) ($_POST['fee_id'] ?? 0);
+        $rawAmount = trim((string) ($_POST['amount'] ?? ''));
         $rawMethod = trim($_POST['payment_method'] ?? 'online');
         $allowedMethods = ['online', 'gcash', 'maya', 'bank_transfer', 'card'];
         $method = in_array($rawMethod, $allowedMethods) ? $rawMethod : 'online';
 
-        if ($feeId <= 0 || $amount <= 0) {
-            Auth::setFlash('error', 'Please enter a valid payment amount.');
+        if (!is_numeric($rawAmount) || (float)$rawAmount <= 0) {
+            Auth::setFlash('error', 'Please enter a valid positive payment amount.');
             redirect(APP_URL . '/public/student/');
         }
 
-        $fee = TuitionFee::findById($feeId);
+        $amount = round((float)$rawAmount, 2);
+
+        if ($feeId <= 0) {
+            // Auto fallback to student's latest active tuition fee if fee_id missing
+            $latestFee = TuitionFee::findLatestByStudentId($student['id']);
+            $feeId = $latestFee ? (int)$latestFee['id'] : 0;
+        }
+
+        $fee = $feeId > 0 ? TuitionFee::findById($feeId) : null;
         if (!$fee || (int)$fee['student_id'] !== (int)$student['id']) {
-            Auth::setFlash('error', 'Invalid tuition fee record.');
+            Auth::setFlash('error', 'Invalid or unassigned tuition fee record.');
             redirect(APP_URL . '/public/student/');
         }
 
-        $remaining = max(0, (float)$fee['total_amount'] - (float)$fee['amount_paid']);
+        $remaining = round(max(0, (float)$fee['total_amount'] - (float)$fee['amount_paid']), 2);
+        if ($remaining <= 0) {
+            Auth::setFlash('error', 'Your tuition assessment is already fully settled. No payment required.');
+            redirect(APP_URL . '/public/student/');
+        }
+
         if ($amount > $remaining) {
-            Auth::setFlash('error', 'Payment amount cannot exceed the remaining balance of ' . peso($remaining));
+            Auth::setFlash('error', 'Payment amount (' . peso($amount) . ') cannot exceed your remaining balance of ' . peso($remaining));
             redirect(APP_URL . '/public/student/');
         }
 
@@ -53,24 +66,9 @@ class StudentController
 
         // 3. Re-fetch updated fee balance
         $updatedFee = TuitionFee::findById($feeId);
-        $newRemaining = max(0, (float)$updatedFee['total_amount'] - (float)$updatedFee['amount_paid']);
+        $newRemaining = round(max(0, (float)$updatedFee['total_amount'] - (float)$updatedFee['amount_paid']), 2);
 
         // 4. Send official receipt email
-        $receiptHtml = "
-            <div style='font-family: sans-serif; padding: 20px; line-height: 1.6; color: #111827;'>
-                <h2 style='color: #0b3d2e;'>PayTrack — Official Payment Receipt</h2>
-                <div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin: 16px 0;'>
-                    <p style='margin: 4px 0;'><strong>Receipt No (OR#):</strong> {$orNumber}</p>
-                    <p style='margin: 4px 0;'><strong>Student:</strong> {$student['first_name']} {$student['last_name']} ({$student['student_id']})</p>
-                    <p style='margin: 4px 0;'><strong>Tuition Assessment:</strong> {$fee['description']}</p>
-                    <p style='margin: 4px 0;'><strong>Payment Method:</strong> " . strtoupper($method) . "</p>
-                    <p style='margin: 4px 0; font-size: 16px; color: #047857;'><strong>Amount Paid:</strong> " . peso($amount) . "</p>
-                    <p style='margin: 4px 0;'><strong>Remaining Tuition Balance:</strong> " . peso($newRemaining) . "</p>
-                    <p style='margin: 4px 0;'><strong>Date & Time:</strong> " . date('Y-m-d H:i:s') . "</p>
-                </div>
-                <p style='color: #6b7280; font-size: 13px;'>Keep this receipt for your records. Verified & Recorded.</p>
-            </div>
-        ";
         $receiptHtml = Mailer::paymentReceiptHtml($student, $fee, $orNumber, $amount, $method, $newRemaining);
 
         Mailer::send($student['email'], "{$student['first_name']} {$student['last_name']}", "Payment Receipt: {$orNumber}", $receiptHtml, 'payment_confirmation', $feeId);

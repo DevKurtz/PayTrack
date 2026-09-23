@@ -9,6 +9,8 @@ if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
 
 class Mailer
 {
+    private static ?object $sharedMailer = null;
+
     /** Shared branded payment notification for both student and cashier payments. */
     public static function paymentReceiptHtml(array $student, array $fee, string $orNumber, float $amount, string $method, float $remaining, bool $cashier = false): string
     {
@@ -29,8 +31,46 @@ class Mailer
               </div><div style='margin-top:16px;padding:10px 12px;background:#f8fafc;border-radius:8px;color:{$statusColor};font-size:13px;font-weight:bold'>{$status}</div><p style='margin:20px 0 0;color:#64748b;font-size:12px'>{$channel} on " . date('M d, Y h:i A') . ".</p></td></tr>
           </table></div>";
     }
+
+    private static function getMailerInstance(): ?object
+    {
+        if (self::$sharedMailer === null && class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+            try {
+                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                $mail->isSMTP();
+                $mail->Host       = MAIL_HOST;
+                $mail->SMTPAuth   = true;
+                $mail->Username   = MAIL_USER;
+                $mail->Password   = MAIL_PASS;
+                $mail->CharSet    = 'UTF-8';
+                $mail->Timeout    = 7; // Fast 7-second timeout
+                $mail->SMTPKeepAlive = true; // Connection pooling across batch emails
+
+                if (MAIL_PORT == 465) {
+                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+                } else {
+                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                }
+                $mail->Port = MAIL_PORT;
+
+                $mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                    ]
+                ];
+                $mail->setFrom(MAIL_FROM, MAIL_NAME);
+                self::$sharedMailer = $mail;
+            } catch (\Exception $e) {
+                self::$sharedMailer = null;
+            }
+        }
+        return self::$sharedMailer;
+    }
+
     /**
-     * Send an email via PHPMailer (SMTP) with automatic audit logging
+     * Send an email via PHPMailer (SMTP) with automatic audit logging and connection pooling
      */
     public static function send(
         string $toEmail,
@@ -50,41 +90,14 @@ class Mailer
             return true;
         }
 
-        if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+        $mail = self::getMailerInstance();
+        if ($mail) {
             try {
-                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-
-                // SMTP Server Configuration
-                $mail->isSMTP();
-                $mail->Host       = MAIL_HOST;
-                $mail->SMTPAuth   = true;
-                $mail->Username   = MAIL_USER;
-                $mail->Password   = MAIL_PASS;
-                $mail->CharSet    = 'UTF-8';
-                $mail->Timeout    = 10; // 10-second timeout
-
-                // Port & Encryption Detection
-                if (MAIL_PORT == 465) {
-                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-                } else {
-                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                }
-                $mail->Port = MAIL_PORT;
-
-                // Windows / XAMPP SSL certificate options
-                $mail->SMTPOptions = [
-                    'ssl' => [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                        'allow_self_signed' => true,
-                    ]
-                ];
-
-                // Sender & Recipient
-                $mail->setFrom(MAIL_FROM, MAIL_NAME);
+                $mail->clearAddresses();
+                $mail->clearAttachments();
+                $mail->clearCustomHeaders();
                 $mail->addAddress($toEmail, $toName);
 
-                // Content
                 $mail->isHTML(true);
                 $mail->Subject = $subject;
                 $mail->Body    = $htmlBody;
@@ -96,6 +109,10 @@ class Mailer
             } catch (\Exception $e) {
                 $errMsg = $mail->ErrorInfo ?? $e->getMessage();
                 self::logEmail($toEmail, $subject, $type, $relatedId, 'failed', $errMsg);
+                try {
+                    $mail->smtpClose();
+                } catch (\Exception $ignore) {}
+                self::$sharedMailer = null;
                 return false;
             }
         }

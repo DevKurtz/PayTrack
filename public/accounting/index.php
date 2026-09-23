@@ -13,10 +13,18 @@ require_once __DIR__ . '/../../controllers/AccountingController.php';
 Auth::start();
 Auth::requireRole('accounting');
 
+// Real-time API feed request
+if (($_GET['action'] ?? '') === 'realtime_feed') {
+    AccountingController::realtimeFeed();
+}
+
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     switch ($action) {
+        case 'change_password':
+            AccountingController::changePassword();
+            break;
         case 'assign_tuition':
             AccountingController::assignTuitionFee();
             break;

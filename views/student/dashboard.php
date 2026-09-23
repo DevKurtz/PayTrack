@@ -13,6 +13,9 @@ $breakdownItems = $primaryFee ? ($primaryFee['items'] ?? []) : [];
 $termDescription = $primaryFee['description'] ?? 'S.Y. ' . ($student['school_year'] ?? (date('Y') . '-' . (date('Y') + 1))) . ' - Assessment Pending';
 $isPendingAssessment = empty($fees) || !$primaryFee;
 
+$totalFees = $primaryFee ? (float)$primaryFee['total_amount'] : 0.0;
+$totalPaid = $primaryFee ? (float)$primaryFee['amount_paid'] : 0.0;
+$totalRemaining = max(0.0, $totalFees - $totalPaid);
 $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) : 0;
 ?>
 <!DOCTYPE html>
@@ -25,6 +28,104 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     <style>
         body {
             background-color: #f8fafc;
+        }
+
+        /* ── Fullscreen Processing / Email Loading Overlay ── */
+        .paytrack-loading-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .paytrack-loading-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .paytrack-loading-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 36px 32px;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
+            transform: scale(0.92);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .paytrack-loading-backdrop.active .paytrack-loading-card {
+            transform: scale(1);
+        }
+        .paytrack-spinner-ring {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            border: 4px solid #d1fae5;
+            border-top-color: #059669;
+            border-right-color: #0b3d2e;
+            animation: paytrackSpin 0.85s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes paytrackSpin {
+            to { transform: rotate(360deg); }
+        }
+        .paytrack-loading-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .paytrack-loading-desc {
+            font-size: 13.5px;
+            color: #64748b;
+            line-height: 1.55;
+            margin: 0 0 22px;
+        }
+        .paytrack-loading-bar-wrapper {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .paytrack-loading-bar-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 40%;
+            background: linear-gradient(90deg, #10b981, #0b3d2e);
+            border-radius: 999px;
+            animation: paytrackBarIndeterminate 1.4s infinite ease-in-out;
+        }
+        @keyframes paytrackBarIndeterminate {
+            0% { left: -40%; width: 40%; }
+            50% { left: 30%; width: 60%; }
+            100% { left: 100%; width: 40%; }
+        }
+        .paytrack-inline-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: paytrackSpin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
         }
 
         /* Topbar additions */
@@ -2040,11 +2141,28 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
             </div>
 
             <div style="margin-top: 18px;">
-                <button type="submit" class="btn dark" style="width: 100%; justify-content: center; padding: 11px;">
+                <button type="submit" class="btn dark" id="btnSubmitPayment" style="width: 100%; justify-content: center; padding: 11px;">
                     Confirm &amp; Submit Payment
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- FULLSCREEN EMAIL & PAYMENT LOADING OVERLAY -->
+<!-- ========================================== -->
+<div class="paytrack-loading-backdrop" id="paymentLoadingOverlay">
+    <div class="paytrack-loading-card">
+        <div class="paytrack-spinner-ring"></div>
+        <div class="paytrack-loading-title">Processing Payment...</div>
+        <p class="paytrack-loading-desc">
+            Please wait while your payment is securely verified and an official electronic receipt is generated and emailed to you and your parents.
+        </p>
+        <div class="paytrack-loading-bar-wrapper">
+            <div class="paytrack-loading-bar-fill"></div>
+        </div>
+        <small style="color: #94a3b8; font-size: 11px;">Do not close or refresh this page.</small>
     </div>
 </div>
 
@@ -2426,8 +2544,22 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
 
     applyRedFieldValidation(document.getElementById('paymentForm'));
 
-    // Form Validation (Prevent Overpayment)
+    // Form Validation (Prevent Overpayment, Negative Numbers) & Trigger Loading Animation
     const paymentForm = document.getElementById('paymentForm');
+    const btnSubmitPayment = document.getElementById('btnSubmitPayment');
+    const paymentLoadingOverlay = document.getElementById('paymentLoadingOverlay');
+
+    if (payAmountInput) {
+        payAmountInput.addEventListener('keydown', function(e) {
+            if (['-', '+', 'e', 'E'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        payAmountInput.addEventListener('input', function() {
+            if (parseFloat(this.value) < 0) this.value = '';
+        });
+    }
+
     if (paymentForm) {
         paymentForm.addEventListener('submit', function (e) {
             if (e.defaultPrevented) return;
@@ -2451,6 +2583,15 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
                     confirmButtonColor: '#e11d48'
                 });
                 return false;
+            }
+
+            // Validation passed: Show loading animation and lock button against double-click
+            if (btnSubmitPayment) {
+                btnSubmitPayment.disabled = true;
+                btnSubmitPayment.innerHTML = '<span class="paytrack-inline-spinner"></span> Processing...';
+            }
+            if (paymentLoadingOverlay) {
+                paymentLoadingOverlay.classList.add('active');
             }
         });
     }

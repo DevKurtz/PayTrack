@@ -12,6 +12,39 @@ require_once __DIR__ . '/../config/mailer.php';
 
 class AccountingController
 {
+    /** Allow the signed-in accounting user to securely change their password. */
+    public static function changePassword(): void
+    {
+        Auth::requireRole('accounting');
+        verify_csrf();
+
+        $user = User::findById((int) Auth::userId());
+        $currentPassword = (string) ($_POST['current_password'] ?? '');
+        $newPassword = (string) ($_POST['new_password'] ?? '');
+        $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+
+        if (!$user || ($user['role'] ?? '') !== 'accounting' || !password_verify($currentPassword, $user['password_hash'] ?? '')) {
+            Auth::setFlash('error', 'Your current password is incorrect.');
+            redirect(APP_URL . '/public/accounting/?view=home');
+        }
+        if (strlen($newPassword) < 8) {
+            Auth::setFlash('error', 'Your new password must be at least 8 characters long.');
+            redirect(APP_URL . '/public/accounting/?view=home');
+        }
+        if ($newPassword !== $confirmPassword) {
+            Auth::setFlash('error', 'The new password and confirmation do not match.');
+            redirect(APP_URL . '/public/accounting/?view=home');
+        }
+        if (password_verify($newPassword, $user['password_hash'])) {
+            Auth::setFlash('error', 'Choose a password different from your current password.');
+            redirect(APP_URL . '/public/accounting/?view=home');
+        }
+
+        User::updatePassword((int) $user['id'], $newPassword);
+        Auth::setFlash('success', 'Your password has been changed. Use the new password the next time you sign in.');
+        redirect(APP_URL . '/public/accounting/?view=home');
+    }
+
     /**
      * Assign / Update Student Tuition Fee Assessment & Class Details
      * Allows customizing individual fee prices and excluding specific fee categories
@@ -35,9 +68,6 @@ class AccountingController
         $dueDate     = trim($_POST['due_date'] ?? date('Y-m-d', strtotime('+30 days')));
         $description = trim($_POST['description'] ?? "S.Y. {$schoolYear} - {$semester} Tuition");
 
-        // Update student class details
-        Student::updateClassDetails($studentId, $gradeLevel, $schoolYear);
-
         // Process customized fee category items
         // Form sends: fee_included[cat_id]=1 and fee_amount[cat_id]=123.45 and fee_name[cat_id]=...
         $includedCats = $_POST['fee_included'] ?? [];
@@ -47,7 +77,12 @@ class AccountingController
         $selectedItems = [];
         foreach ($includedCats as $catId => $val) {
             $catId = (int) $catId;
-            $amt = isset($amounts[$catId]) ? max(0.0, (float) $amounts[$catId]) : 0.0;
+            $rawAmt = trim((string) ($amounts[$catId] ?? '0'));
+            if (!preg_match('/^\d+(?:\.\d{1,2})?$/D', $rawAmt)) {
+                Auth::setFlash('error', 'Fee amounts must be non-negative numbers with no more than 2 decimal places.');
+                redirect(APP_URL . '/public/accounting/?view=students');
+            }
+            $amt = (float) $rawAmt;
             $name = trim($catNames[$catId] ?? "Fee Aspect #{$catId}");
 
             $selectedItems[] = [
@@ -62,17 +97,38 @@ class AccountingController
             redirect(APP_URL . '/public/accounting/?view=students');
         }
 
-        // Create tuition assessment in DB
-        $feeId = TuitionFee::createCustomAssessment(
-            $studentId,
-            $schoolYear,
-            $semester,
-            $description,
-            !empty($dueDate) ? $dueDate : null,
-            $selectedItems
-        );
+        $feeId = (int) ($_POST['fee_id'] ?? 0);
+        if ($feeId <= 0) {
+            $existingFee = TuitionFee::findLatestByStudentId($studentId);
+            if ($existingFee) {
+                $feeId = (int)$existingFee['id'];
+            }
+        }
 
-        $createdFee = TuitionFee::findById($feeId);
+        if ($feeId > 0) {
+            TuitionFee::updateCustomAssessment(
+                $feeId,
+                $studentId,
+                $schoolYear,
+                $semester,
+                $description,
+                !empty($dueDate) ? $dueDate : null,
+                $selectedItems
+            );
+            $createdFee = TuitionFee::findById($feeId);
+            $actionWord = 'updated';
+        } else {
+            $feeId = TuitionFee::createCustomAssessment(
+                $studentId,
+                $schoolYear,
+                $semester,
+                $description,
+                !empty($dueDate) ? $dueDate : null,
+                $selectedItems
+            );
+            $createdFee = TuitionFee::findById($feeId);
+            $actionWord = 'posted';
+        }
 
         // Notify student & parents via email
         $notifyEmail = !empty($_POST['notify_email']);
@@ -80,7 +136,7 @@ class AccountingController
             Mailer::sendTuitionAssessmentNotice($student, $createdFee, $selectedItems);
         }
 
-        Auth::setFlash('success', "Tuition assessment of " . peso($createdFee['total_amount'] ?? 0) . " posted for {$student['first_name']} {$student['last_name']}." . ($notifyEmail ? " Notification emails sent to student & parents." : ""));
+        Auth::setFlash('success', "Tuition assessment of " . peso($createdFee['total_amount'] ?? 0) . " {$actionWord} for {$student['first_name']} {$student['last_name']}." . ($notifyEmail ? " Notification emails sent to student & parents." : ""));
         redirect(APP_URL . '/public/accounting/?view=students');
     }
 
@@ -92,13 +148,20 @@ class AccountingController
         Auth::requireRole('accounting');
         verify_csrf();
 
-        $feeId  = (int) ($_POST['fee_id'] ?? 0);
-        $amount = (float) ($_POST['amount'] ?? 0);
-        $method = trim($_POST['payment_method'] ?? 'cash');
-        $notes  = trim($_POST['notes'] ?? 'Over-the-counter payment at Accounting Office');
+        $feeId     = (int) ($_POST['fee_id'] ?? 0);
+        $rawAmount = trim((string) ($_POST['amount'] ?? ''));
+        $method    = trim($_POST['payment_method'] ?? 'cash');
+        $notes     = trim($_POST['notes'] ?? 'Over-the-counter payment at Accounting Office');
 
         $allowed = ['cash', 'gcash', 'maya', 'bank_transfer', 'card', 'online', 'other'];
         if (!in_array($method, $allowed)) $method = 'cash';
+
+        if (!is_numeric($rawAmount) || (float)$rawAmount <= 0) {
+            Auth::setFlash('error', 'Please enter a valid positive payment amount.');
+            redirect(APP_URL . '/public/accounting/?view=transactions');
+        }
+
+        $amount = round((float)$rawAmount, 2);
 
         $fee = TuitionFee::findById($feeId);
         if (!$fee) {
@@ -106,14 +169,14 @@ class AccountingController
             redirect(APP_URL . '/public/accounting/?view=transactions');
         }
 
-        $remaining = max(0, (float)$fee['total_amount'] - (float)$fee['amount_paid']);
-        if ($amount <= 0) {
-            Auth::setFlash('error', 'Please enter a valid payment amount.');
+        $remaining = round(max(0, (float)$fee['total_amount'] - (float)$fee['amount_paid']), 2);
+        if ($remaining <= 0) {
+            Auth::setFlash('error', 'This tuition assessment is already fully settled and has no remaining balance.');
             redirect(APP_URL . '/public/accounting/?view=transactions');
         }
 
         if ($amount > $remaining) {
-            Auth::setFlash('error', 'Payment amount cannot exceed remaining balance of ' . peso($remaining));
+            Auth::setFlash('error', 'Payment amount (' . peso($amount) . ') cannot exceed remaining balance of ' . peso($remaining));
             redirect(APP_URL . '/public/accounting/?view=transactions');
         }
 
@@ -126,22 +189,8 @@ class AccountingController
         $student = Student::findById($fee['student_id']);
         if ($student) {
             $updatedFee = TuitionFee::findById($feeId);
-            $newRem = max(0, (float)$updatedFee['total_amount'] - (float)$updatedFee['amount_paid']);
+            $newRem = round(max(0, (float)$updatedFee['total_amount'] - (float)$updatedFee['amount_paid']), 2);
 
-            $receiptHtml = "
-                <div style='font-family: sans-serif; padding: 20px; line-height: 1.6; color: #111827;'>
-                    <h2 style='color: #0b3d2e;'>PayTrack — Official Payment Receipt</h2>
-                    <div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin: 16px 0;'>
-                        <p style='margin: 4px 0;'><strong>Receipt No (OR#):</strong> {$orNumber}</p>
-                        <p style='margin: 4px 0;'><strong>Student:</strong> {$student['first_name']} {$student['last_name']} ({$student['student_id']})</p>
-                        <p style='margin: 4px 0;'><strong>Tuition Assessment:</strong> {$fee['description']}</p>
-                        <p style='margin: 4px 0;'><strong>Payment Method:</strong> " . strtoupper($method) . " (Accounting Cashier)</p>
-                        <p style='margin: 4px 0; font-size: 16px; color: #047857;'><strong>Amount Paid:</strong> " . peso($amount) . "</p>
-                        <p style='margin: 4px 0;'><strong>Remaining Balance:</strong> " . peso($newRem) . "</p>
-                        <p style='margin: 4px 0;'><strong>Date & Time:</strong> " . date('Y-m-d H:i:s') . "</p>
-                    </div>
-                </div>
-            ";
             $receiptHtml = Mailer::paymentReceiptHtml($student, $fee, $orNumber, $amount, $method, $newRem, true);
             Mailer::send($student['email'], "{$student['first_name']} {$student['last_name']}", "Payment Receipt: {$orNumber}", $receiptHtml, 'payment_confirmation', $feeId);
             if (!empty($student['parent_email'])) {
@@ -215,5 +264,111 @@ class AccountingController
             Auth::setFlash('success', 'Tuition assessment record deleted.');
         }
         redirect(APP_URL . '/public/accounting/?view=fees');
+    }
+
+    /**
+     * Real-time polling API endpoint for Accounting Portal
+     * Returns new payments, updated balances, and metrics in JSON format
+     */
+    public static function realtimeFeed(): void
+    {
+        Auth::requireRole('accounting');
+        header('Content-Type: application/json; charset=utf-8');
+
+        $db = Database::getInstance();
+        $lastPaymentId = (int) ($_GET['last_payment_id'] ?? 0);
+
+        // Fetch any new payments created after $lastPaymentId
+        $newPaymentsStmt = $db->prepare("
+            SELECT p.*, s.first_name, s.last_name, s.student_id as student_num, tf.description as fee_desc
+            FROM payments p
+            JOIN students s ON p.student_id = s.id
+            JOIN tuition_fees tf ON p.tuition_fee_id = tf.id
+            WHERE p.id > ?
+            ORDER BY p.id ASC
+        ");
+        $newPaymentsStmt->execute([$lastPaymentId]);
+        $newPayments = $newPaymentsStmt->fetchAll();
+
+        // Calculate latest system-wide financial metrics
+        $payments = Payment::all();
+        $fees = TuitionFee::all();
+
+        $totalRevenue = 0;
+        foreach ($payments as $p) {
+            $totalRevenue += (float) ($p['amount'] ?? 0);
+        }
+        $totalAssessed = 0;
+        foreach ($fees as $f) {
+            $totalAssessed += (float) ($f['total_amount'] ?? 0);
+        }
+
+        // Save class changes only after every submitted fee amount is valid.
+        Student::updateClassDetails($studentId, $gradeLevel, $schoolYear);
+        $totalReceivables = max(0, $totalAssessed - $totalRevenue);
+        $collectionRate = ($totalAssessed > 0) ? min(100, round(($totalRevenue / $totalAssessed) * 100, 1)) : 0;
+
+        // Fetch students with current balance
+        $students = Student::all();
+        $studentBalances = [];
+        foreach ($students as $s) {
+            $sFees = TuitionFee::getByStudentId($s['id']);
+            $primaryFee = !empty($sFees) ? $sFees[0] : null;
+            $tAmt = $primaryFee ? (float)$primaryFee['total_amount'] : 0.0;
+            $pAmt = $primaryFee ? (float)$primaryFee['amount_paid'] : 0.0;
+            $rAmt = max(0.0, $tAmt - $pAmt);
+
+            $studentBalances[] = [
+                'id' => (int)$s['id'],
+                'student_id' => $s['student_id'],
+                'name' => $s['first_name'] . ' ' . $s['last_name'],
+                'has_assessment' => !empty($sFees),
+                'total_amount' => $tAmt,
+                'amount_paid' => $pAmt,
+                'remaining_balance' => $rAmt,
+                'formatted_balance' => peso($rAmt),
+                'formatted_total' => peso($tAmt)
+            ];
+        }
+
+        // Return each assessment separately so the live feed can update the
+        // Accounting > Tuition Assessments table (students may have many fees).
+        $assessmentBalances = [];
+        foreach ($fees as $fee) {
+            $feeTotal = (float) ($fee['total_amount'] ?? 0);
+            $feePaid = (float) ($fee['amount_paid'] ?? 0);
+            $feeRemaining = max(0, $feeTotal - $feePaid);
+            $assessmentBalances[(int) $fee['id']] = [
+                'total_amount' => $feeTotal,
+                'amount_paid' => $feePaid,
+                'remaining_balance' => $feeRemaining,
+                'formatted_total' => peso($feeTotal),
+                'formatted_paid' => peso($feePaid),
+                'formatted_remaining' => peso($feeRemaining),
+                'status' => $feeRemaining <= 0 ? 'paid' : ($feePaid > 0 ? 'partial' : 'unpaid')
+            ];
+        }
+
+        // Check latest unread email logs / notifications
+        $emailLogs = $db->query("SELECT id, recipient_email, subject, type, status, sent_at FROM email_logs ORDER BY sent_at DESC LIMIT 10")->fetchAll();
+
+        echo json_encode([
+            'success' => true,
+            'timestamp' => time(),
+            'new_payments_count' => count($newPayments),
+            'new_payments' => $newPayments,
+            'metrics' => [
+                'total_revenue' => $totalRevenue,
+                'total_receivables' => $totalReceivables,
+                'collection_rate' => $collectionRate,
+                'formatted_revenue' => peso($totalRevenue),
+                'formatted_receivables' => peso($totalReceivables),
+                'formatted_collection_rate' => $collectionRate . '%'
+            ],
+            'students' => $studentBalances,
+            'assessments' => $assessmentBalances,
+            'recent_notifications' => $emailLogs
+        ]);
+        exit;
     }
 }
