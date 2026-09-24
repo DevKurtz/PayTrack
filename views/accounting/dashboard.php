@@ -1184,7 +1184,7 @@ $accountingName = Auth::username() ?? 'accounting';
             <div style="margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <label class="form-label" style="margin: 0; font-weight: 700;">Fee Breakdown &amp; Institutional Aspects</label>
-                    <small style="color: #64748b;">Uncheck to exclude; edit rate directly</small>
+                    <small style="color: #64748b;">Institutional fees are fixed; adjust subject tuition as needed</small>
                 </div>
 
                 <div id="feeCategoriesContainer" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
@@ -1210,9 +1210,12 @@ $accountingName = Auth::username() ?? 'accounting';
                                        name="fee_amount[<?= $cat['id'] ?>]" 
                                        id="amt_<?= $cat['id'] ?>" 
                                        data-variable="<?= !empty($cat['is_variable']) ? '1' : '0' ?>"
+                                       data-default-amount="<?= number_format($cat['default_amount'], 2, '.', '') ?>"
                                        value="<?= number_format($cat['default_amount'], 2, '.', '') ?>" 
                                        inputmode="decimal"
                                        required
+                                       <?= empty($cat['is_variable']) ? 'readonly aria-readonly="true"' : '' ?>
+                                       <?= !empty($cat['is_variable']) ? 'placeholder="Calculated from assessment total"' : '' ?>
                                        aria-label="<?= e($cat['name']) ?> amount, maximum two decimal places"
                                        oninput="recalcAssessmentTotal()">
                             </div>
@@ -1512,7 +1515,9 @@ $accountingName = Auth::username() ?? 'accounting';
                 const item = existingItems.find(existing => Number(existing.fee_category_id) === categoryId)
                     || existingItems.find(existing => !existing.fee_category_id && existing.category_name === categoryName);
                 checkbox.checked = Boolean(item);
-                amount.value = item ? Number(item.amount).toFixed(2) : '0.00';
+                amount.value = amount.dataset.variable === '1'
+                    ? (item ? Number(item.amount).toFixed(2) : '0.00')
+                    : Number(amount.dataset.defaultAmount).toFixed(2);
                 amount.disabled = !item;
                 row.classList.toggle('excluded', !item);
                 validateAssessmentAmount(amount);
@@ -1538,7 +1543,7 @@ $accountingName = Auth::username() ?? 'accounting';
                 checkbox.checked = true;
                 amount.disabled = false;
                 row.classList.remove('excluded');
-                amount.value = amount.defaultValue;
+                amount.value = amount.dataset.variable === '1' ? '0.00' : Number(amount.dataset.defaultAmount).toFixed(2);
                 validateAssessmentAmount(amount);
             });
         }

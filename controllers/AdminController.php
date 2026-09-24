@@ -53,12 +53,12 @@ class AdminController
             $fail(['first_name' => 'Enter a valid first name.', 'last_name' => 'Enter a valid last name.']);
         }
 
-        if (!isValidEmail($studentEmail)) {
-            $fail(['student_email' => 'Enter a valid student email.']);
+        if (!isValidGmail($studentEmail)) {
+            $fail(['student_email' => 'Use a valid Gmail address ending in @gmail.com.']);
         }
 
-        if (!empty($parentEmail) && !isValidEmail($parentEmail)) {
-            $fail(['parent_email' => 'Enter a valid parent email.']);
+        if (!empty($parentEmail) && !isValidGmail($parentEmail)) {
+            $fail(['parent_email' => 'Use a valid Gmail address ending in @gmail.com.']);
         }
 
         if ($parentEmail !== '' && strcasecmp($studentEmail, $parentEmail) === 0) {
@@ -144,8 +144,8 @@ class AdminController
             redirect(APP_URL . '/public/admin/?view=users');
         }
 
-        if (!isValidEmail($email)) {
-            Auth::setFlash('error', 'Please provide a valid email address.');
+        if (!isValidGmail($email)) {
+            Auth::setFlash('error', 'Please provide a valid Gmail address ending in @gmail.com.');
             redirect(APP_URL . '/public/admin/?view=users');
         }
 

@@ -97,6 +97,12 @@ function isValidEmail(string $email): bool
     return (bool) filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
+/** Validate an email address restricted to Google's gmail.com domain. */
+function isValidGmail(string $email): bool
+{
+    return isValidEmail($email) && strtolower(substr(strrchr($email, '@') ?: '', 1)) === 'gmail.com';
+}
+
 /**
  * Validate Name (letters, spaces, hyphens, min 2 chars)
  */

@@ -730,7 +730,7 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newStudentEmail">Student Email *</label>
-                    <input type="email" class="form-control<?= $studentError('student_email') ?>" name="student_email" id="newStudentEmail" required placeholder="student@email.com" value="<?= $studentValue('student_email') ?>">
+                    <input type="email" pattern=".+@gmail\.com" title="Use a Gmail address ending in @gmail.com." class="form-control<?= $studentError('student_email') ?>" name="student_email" id="newStudentEmail" required placeholder="student@gmail.com" value="<?= $studentValue('student_email') ?>">
                 </div>
             </div>
 
@@ -774,7 +774,7 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="newParentEmail">Parent Email</label>
-                    <input type="email" class="form-control<?= $studentError('parent_email') ?>" name="parent_email" id="newParentEmail" placeholder="parent@email.com" value="<?= $studentValue('parent_email') ?>">
+                    <input type="email" pattern=".+@gmail\.com" title="Use a Gmail address ending in @gmail.com." class="form-control<?= $studentError('parent_email') ?>" name="parent_email" id="newParentEmail" placeholder="parent@gmail.com" value="<?= $studentValue('parent_email') ?>">
                 </div>
             </div>
 
@@ -818,7 +818,7 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
 
             <div class="form-group" style="margin-bottom: 14px;">
                 <label class="form-label" for="accEmail">Staff Email *</label>
-                <input type="email" class="form-control" name="email" id="accEmail" required placeholder="e.g. jane@paytrack.edu.ph">
+                <input type="email" pattern=".+@gmail\.com" title="Use a Gmail address ending in @gmail.com." class="form-control" name="email" id="accEmail" required placeholder="e.g. jane@gmail.com">
             </div>
 
             <div class="form-group" style="margin-bottom: 18px;">

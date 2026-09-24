@@ -274,8 +274,8 @@
                         <div class="step-icon-box">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </div>
-                        <h4 class="step-title">Create Your Account</h4>
-                        <p class="step-desc">Sign up as a student or parent in just a few minutes using school ID.</p>
+                        <h4 class="step-title">Get Your Login Details</h4>
+                        <p class="step-desc">Your school will provide your student ID and starter password. Check your email for the account details.</p>
                     </div>
                 </div>
 
@@ -285,8 +285,8 @@
                         <div class="step-icon-box">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         </div>
-                        <h4 class="step-title">Add a Payment Method</h4>
-                        <p class="step-desc">Link your bank card, e-wallet, or preferred online payment option.</p>
+                        <h4 class="step-title">Sign In to Your Account</h4>
+                        <p class="step-desc">Enter the student ID and password provided by your school to open your PayTrack account.</p>
                     </div>
                 </div>
 
@@ -296,8 +296,8 @@
                         <div class="step-icon-box" style="background: #ecfdf5; color: #059669;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         </div>
-                        <h4 class="step-title">Start Managing Fees</h4>
-                        <p class="step-desc">View balances, make payments, and get notified instantly via email.</p>
+                        <h4 class="step-title">Review and Pay School Fees</h4>
+                        <p class="step-desc">Check your tuition breakdown, pay an outstanding balance, and view your receipts and updates.</p>
                     </div>
                 </div>
             </div>

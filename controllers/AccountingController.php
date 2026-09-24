@@ -77,7 +77,15 @@ class AccountingController
         $selectedItems = [];
         foreach ($includedCats as $catId => $val) {
             $catId = (int) $catId;
-            $rawAmt = trim((string) ($amounts[$catId] ?? '0'));
+            $category = FeeCategory::findById($catId);
+            if (!$category || empty($category['is_active'])) {
+                continue;
+            }
+            // Institutional charges are controlled by Accounting fee settings;
+            // ignore any client-submitted edits to their rates.
+            $rawAmt = empty($category['is_variable'])
+                ? number_format((float) $category['default_amount'], 2, '.', '')
+                : trim((string) ($amounts[$catId] ?? ''));
             if (!preg_match('/^\d+(?:\.\d{1,2})?$/D', $rawAmt)) {
                 Auth::setFlash('error', 'Fee amounts must be non-negative numbers with no more than 2 decimal places.');
                 redirect(APP_URL . '/public/accounting/?view=students');
