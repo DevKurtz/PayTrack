@@ -579,12 +579,14 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                                             <div style="display: inline-flex; align-items: center; gap: 6px;">
                                                 <!-- Status Toggle -->
                                                 <?php if ($u['id'] !== Auth::userId()): ?>
-                                                    <form method="POST" action="<?= APP_URL ?>/public/admin/?view=users" style="display: inline;">
+                                                    <form method="POST" action="<?= APP_URL ?>/public/admin/?view=users" style="display: inline;" id="statusForm_<?= $u['id'] ?>">
                                                         <?= csrf_field() ?>
                                                         <input type="hidden" name="action" value="update_status">
                                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                         <input type="hidden" name="status" value="<?= $u['status'] === 'active' ? 'suspended' : 'active' ?>">
-                                                        <button type="submit" class="action-btn" title="<?= $u['status'] === 'active' ? 'Suspend User' : 'Activate User' ?>">
+                                                        <button type="button" class="action-btn <?= $u['status'] === 'active' ? 'warning' : '' ?>"
+                                                            title="<?= $u['status'] === 'active' ? 'Suspend User' : 'Activate User' ?>"
+                                                            onclick="confirmStatusToggle(<?= $u['id'] ?>, '<?= htmlspecialchars($u['display_name'], ENT_QUOTES) ?>', '<?= $u['status'] ?>')">
                                                             <?= $u['status'] === 'active' ? 'Suspend' : 'Activate' ?>
                                                         </button>
                                                     </form>
@@ -829,13 +831,25 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn" onclick="document.getElementById('createAccountingModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn" style="background: #0f172a; color: #fff; font-weight: 700; padding: 10px 22px;">
+                <button type="submit" class="btn" id="btnCreateAccSubmit" style="background: #0f172a; color: #fff; font-weight: 700; padding: 10px 22px;">
                     Create &amp; Email Credentials
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- ── Admin Loading Overlay ── -->
+<div id="adminLoadingOverlay" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.72); backdrop-filter:blur(4px); flex-direction:column; align-items:center; justify-content:center; gap:22px;">
+    <div style="width:56px;height:56px;border-radius:50%;border:5px solid rgba(255,255,255,0.18);border-top-color:#fff;animation:adminSpin 0.85s linear infinite;"></div>
+    <div style="text-align:center;">
+        <div id="adminLoadingTitle" style="color:#fff;font-size:18px;font-weight:700;margin-bottom:6px;">Processing…</div>
+        <div id="adminLoadingDesc" style="color:rgba(255,255,255,0.7);font-size:13.5px;max-width:320px;line-height:1.5;">Please wait while we process your request.</div>
+    </div>
+</div>
+<style>
+@keyframes adminSpin { to { transform: rotate(360deg); } }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -885,13 +899,50 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
         document.getElementById('createAccountingModal')?.classList.add('active');
     };
 
+    // ── SweetAlert: Suspend / Activate User ──
+    window.confirmStatusToggle = function(userId, name, currentStatus) {
+        const isSuspending = currentStatus === 'active';
+        Swal.fire({
+            title: isSuspending ? 'Suspend Account?' : 'Activate Account?',
+            html: isSuspending
+                ? `Are you sure you want to <strong>suspend</strong> the account of <strong>${name}</strong>?<br><br><span style="color:#b45309;font-size:12px;">The user will no longer be able to log in until reactivated.</span>`
+                : `Are you sure you want to <strong>reactivate</strong> the account of <strong>${name}</strong>?<br><br><span style="color:#059669;font-size:12px;">The user will regain access to their portal.</span>`,
+            icon: isSuspending ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonColor: isSuspending ? '#b45309' : '#0b3d2e',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: isSuspending ? 'Yes, Suspend' : 'Yes, Activate',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('statusForm_' + userId)?.submit();
+            }
+        });
+    };
+
+    const adminLoadingOverlay = document.getElementById('adminLoadingOverlay');
+    const adminLoadingTitle   = document.getElementById('adminLoadingTitle');
+    const adminLoadingDesc    = document.getElementById('adminLoadingDesc');
+
     const enrollStudentForm = document.getElementById('enrollStudentForm');
     enrollStudentForm?.addEventListener('submit', () => {
         const submit = document.getElementById('btnEnrollStudentSubmit');
         if (!submit || !enrollStudentForm.checkValidity()) return;
         submit.disabled = true;
-        submit.classList.add('is-loading');
-        submit.querySelector('.submit-label').textContent = 'Creating account and sending emails…';
+        submit.querySelector('.submit-label').textContent = 'Processing…';
+        if (adminLoadingTitle) adminLoadingTitle.textContent = 'Enrolling Student…';
+        if (adminLoadingDesc)  adminLoadingDesc.textContent  = 'Creating student account and sending welcome emails. Please wait.';
+        if (adminLoadingOverlay) adminLoadingOverlay.style.display = 'flex';
+    });
+
+    const createAccountingForm = document.getElementById('createAccountingForm');
+    const btnCreateAccSubmit   = document.getElementById('btnCreateAccSubmit');
+    createAccountingForm?.addEventListener('submit', () => {
+        if (!createAccountingForm.checkValidity()) return;
+        if (btnCreateAccSubmit) { btnCreateAccSubmit.disabled = true; btnCreateAccSubmit.textContent = 'Processing…'; }
+        if (adminLoadingTitle) adminLoadingTitle.textContent = 'Creating Account…';
+        if (adminLoadingDesc)  adminLoadingDesc.textContent  = 'Creating accounting staff account and sending credentials by email. Please wait.';
+        if (adminLoadingOverlay) adminLoadingOverlay.style.display = 'flex';
     });
 
     // ── Delete User Confirmation ──

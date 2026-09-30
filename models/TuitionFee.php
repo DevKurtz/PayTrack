@@ -236,7 +236,13 @@ class TuitionFee
     public static function delete(int $id): void
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("DELETE FROM tuition_fees WHERE id = ?");
-        $stmt->execute([$id]);
+
+        // Must remove child rows first to satisfy FK constraints:
+        // 1. payments reference tuition_fees (fk_payments_fee)
+        $db->prepare("DELETE FROM payments WHERE tuition_fee_id = ?")->execute([$id]);
+        // 2. tuition_fee_items reference tuition_fees
+        $db->prepare("DELETE FROM tuition_fee_items WHERE tuition_fee_id = ?")->execute([$id]);
+        // 3. Now safe to delete the parent
+        $db->prepare("DELETE FROM tuition_fees WHERE id = ?")->execute([$id]);
     }
 }

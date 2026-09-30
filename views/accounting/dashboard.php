@@ -894,11 +894,12 @@ $accountingName = Auth::username() ?? 'accounting';
                                                 <?php endif; ?>
                                             </td>
                                             <td style="text-align: right;">
-                                                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=fees" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this tuition assessment?');">
+                                                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=fees" style="display: inline;" id="deleteFeeForm_<?= $f['id'] ?>">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="delete_fee">
                                                     <input type="hidden" name="fee_id" value="<?= $f['id'] ?>">
-                                                    <button type="submit" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;">Delete</button>
+                                                    <button type="button" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                                                        onclick="confirmDeleteFee(<?= $f['id'] ?>, '<?= htmlspecialchars($f['description'], ENT_QUOTES) ?>')">Delete</button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -989,11 +990,12 @@ $accountingName = Auth::username() ?? 'accounting';
                                         </td>
                                         <td style="text-align: right;">
                                             <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px;" onclick="openEditCategoryModal(<?= htmlspecialchars(json_encode($cat), ENT_QUOTES) ?>)">Edit</button>
-                                            <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" onsubmit="return confirm('Delete this category?');">
+                                            <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_<?= $cat['id'] ?>">
                                                 <?= csrf_field() ?>
                                                 <input type="hidden" name="action" value="delete_fee_category">
                                                 <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
-                                                <button type="submit" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;">Delete</button>
+                                                <button type="button" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                                                    onclick="confirmDeleteCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>')">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -1481,6 +1483,42 @@ $accountingName = Auth::username() ?? 'accounting';
             }
         });
     });
+
+    // ── SweetAlert: Delete Tuition Assessment ──
+    window.confirmDeleteFee = function(feeId, description) {
+        Swal.fire({
+            title: 'Delete Assessment?',
+            html: `Are you sure you want to permanently delete the assessment:<br><br><strong>${description}</strong><br><br><span style="color:#ef4444;font-size:12px;">⚠ This will also delete all payment records linked to this assessment. This action cannot be undone.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Delete Assessment',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteFeeForm_' + feeId)?.submit();
+            }
+        });
+    };
+
+    // ── SweetAlert: Delete Fee Category ──
+    window.confirmDeleteCategory = function(catId, name) {
+        Swal.fire({
+            title: 'Delete Fee Category?',
+            html: `Are you sure you want to delete the category:<br><br><strong>${name}</strong><br><br><span style="color:#ef4444;font-size:12px;">⚠ This will fail if existing assessments still use this category.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Delete Category',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteCatForm_' + catId)?.submit();
+            }
+        });
+    };
 
     // ── Open Assign Assessment Modal ──
     const assignTuitionModal = document.getElementById('assignTuitionModal');

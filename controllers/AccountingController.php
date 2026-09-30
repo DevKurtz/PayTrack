@@ -255,8 +255,12 @@ class AccountingController
 
         $id = (int) ($_POST['category_id'] ?? 0);
         if ($id > 0) {
-            FeeCategory::delete($id);
-            Auth::setFlash('success', 'Fee category deleted.');
+            try {
+                FeeCategory::delete($id);
+                Auth::setFlash('success', 'Fee category deleted successfully.');
+            } catch (\RuntimeException $e) {
+                Auth::setFlash('error', $e->getMessage());
+            }
         }
         redirect(APP_URL . '/public/accounting/?view=categories');
     }

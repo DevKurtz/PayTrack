@@ -16,7 +16,14 @@ Auth::redirectIfLoggedIn();
 
 // Handle POST login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
-    AuthController::login();
+    try {
+        AuthController::login();
+    } catch (Throwable $error) {
+        // Keep database/server details in the host error log, never in the browser.
+        error_log('PayTrack login request failed: ' . $error->getMessage());
+        Auth::setFlash('error', 'Login is temporarily unavailable. Please try again later.');
+        redirect(APP_URL . '/public/');
+    }
 }
 
 // Pull flash data for the view

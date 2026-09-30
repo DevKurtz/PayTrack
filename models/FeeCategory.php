@@ -83,6 +83,17 @@ class FeeCategory
     public static function delete(int $id): void
     {
         $db = Database::getInstance();
+
+        // Check if any tuition fee items reference this category
+        $check = $db->prepare('SELECT COUNT(*) AS cnt FROM tuition_fee_items WHERE fee_category_id = ?');
+        $check->execute([$id]);
+        $cnt = (int) ($check->fetch()['cnt'] ?? 0);
+        if ($cnt > 0) {
+            throw new \RuntimeException(
+                'Cannot delete this fee category because it is used in ' . $cnt . ' existing tuition assessment(s). Remove or reassign those assessments first.'
+            );
+        }
+
         $stmt = $db->prepare('DELETE FROM fee_categories WHERE id = ?');
         $stmt->execute([$id]);
     }
