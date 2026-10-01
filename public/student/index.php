@@ -15,6 +15,45 @@ Auth::requireRole('student');
 $userId = Auth::userId();
 $student = Student::findByUserId($userId);
 
+// Live real-time status API for Student Portal sync
+if (($_GET['action'] ?? '') === 'live_status') {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!$student) {
+        echo json_encode(['success' => false, 'error' => 'Student record not found']);
+        exit;
+    }
+    // Re-fetch student record from DB to get updated grade_level and school_year
+    $freshStudent = Student::findById((int) $student['id']);
+    $studentFees = TuitionFee::getByStudentId((int) $student['id']);
+    $primaryFee = !empty($studentFees) ? $studentFees[0] : null;
+
+    $tFees = $primaryFee ? (float)$primaryFee['total_amount'] : 0.0;
+    $tPaid = $primaryFee ? (float)$primaryFee['amount_paid'] : 0.0;
+    $tRem = max(0.0, $tFees - $tPaid);
+    $pct = ($tFees > 0) ? min(100, round(($tPaid / $tFees) * 100)) : 0;
+    $studentPayments = Payment::getByStudentId((int) $student['id']);
+
+    echo json_encode([
+        'success' => true,
+        'has_assessment' => !empty($primaryFee),
+        'fee_id' => $primaryFee ? (int)$primaryFee['id'] : 0,
+        'total_amount' => $tFees,
+        'amount_paid' => $tPaid,
+        'remaining_balance' => $tRem,
+        'formatted_total' => peso($tFees),
+        'formatted_paid' => peso($tPaid),
+        'formatted_remaining' => peso($tRem),
+        'percentage' => $pct,
+        'status' => $tRem <= 0 ? 'paid' : ($tPaid > 0 ? 'partial' : 'unpaid'),
+        'description' => $primaryFee['description'] ?? '',
+        'grade_level' => $freshStudent['grade_level'] ?? '',
+        'school_year' => $freshStudent['school_year'] ?? '',
+        'items' => $primaryFee['items'] ?? [],
+        'payments_count' => count($studentPayments),
+    ]);
+    exit;
+}
+
 // Routing view: 'home' (default), 'fees', 'history', 'receipts'
 $currentView = $_GET['view'] ?? 'home';
 if ($currentView === 'password') {

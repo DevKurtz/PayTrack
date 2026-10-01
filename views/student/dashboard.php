@@ -23,7 +23,12 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PayTrack — Student Portal</title>
+        <title>PayTrack — Student Portal</title>
+    <!-- Bootstrap 5.3 (Local & CDN with Subresource Integrity) -->
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/bootstrap/css/bootstrap.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- jQuery 3.7.1 for AJAX Operations -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/main.css">
     <style>
         body {
@@ -2816,5 +2821,66 @@ $calcPct = ($totalFees > 0) ? min(100, round(($totalPaid / $totalFees) * 100)) :
     });
 </script>
 
+<script>
+    // ── Real-Time Tuition & Assessment Polling for Student ──
+    let lastKnownTotal = '<?= peso($totalFees) ?>';
+    let lastKnownRemaining = '<?= peso($totalRemaining) ?>';
+    let lastKnownPaid = '<?= peso($totalPaid) ?>';
+
+    async function pollStudentLiveStatus() {
+        try {
+            const resp = await fetch('<?= APP_URL ?>/public/student/?action=live_status', { cache: 'no-store' });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data.success) return;
+
+            // If tuition total or remaining balance changed, update DOM
+            if (data.formatted_remaining !== lastKnownRemaining || data.formatted_total !== lastKnownTotal || data.formatted_paid !== lastKnownPaid) {
+                lastKnownTotal = data.formatted_total;
+                lastKnownRemaining = data.formatted_remaining;
+                lastKnownPaid = data.formatted_paid;
+
+                // Update balance cards and labels
+                document.querySelectorAll('.balance-huge-red').forEach(el => el.textContent = data.formatted_remaining);
+                document.querySelectorAll('.metric-mini-val').forEach(el => {
+                    if (el.style.color.includes('220') || el.style.color.includes('dc2626')) {
+                        el.textContent = data.formatted_remaining;
+                    }
+                });
+
+                // Update progress bar
+                const progressFill = document.querySelector('.balance-progress-fill') || document.querySelector('.progress-bar');
+                if (progressFill) {
+                    progressFill.style.width = data.percentage + '%';
+                }
+
+                // Show discreet toast
+                if (window.Swal) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'info',
+                        title: 'Tuition assessment updated by Accounting Office.'
+                    });
+                }
+            }
+        } catch (e) {
+            // Silently ignore network interruptions
+        }
+    }
+
+    // Poll every 6 seconds and on window focus
+    setInterval(pollStudentLiveStatus, 6000);
+    window.addEventListener('focus', pollStudentLiveStatus);
+</script>
+
+<!-- Bootstrap 5.3 JS (CDN with Subresource Integrity & Local Fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="<?= APP_URL ?>/assets/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>

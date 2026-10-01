@@ -81,17 +81,18 @@ class AccountingController
             if (!$category || empty($category['is_active'])) {
                 continue;
             }
-            // Institutional charges are controlled by Accounting fee settings;
-            // ignore any client-submitted edits to their rates.
-            $rawAmt = empty($category['is_variable'])
-                ? number_format((float) $category['default_amount'], 2, '.', '')
-                : trim((string) ($amounts[$catId] ?? ''));
+            
+            // Allow accounting to customize any fee amount, or default to the category rate
+            $rawAmt = isset($amounts[$catId]) && trim((string)$amounts[$catId]) !== ''
+                ? trim((string) $amounts[$catId])
+                : number_format((float) $category['default_amount'], 2, '.', '');
+
             if (!preg_match('/^\d+(?:\.\d{1,2})?$/D', $rawAmt)) {
                 Auth::setFlash('error', 'Fee amounts must be non-negative numbers with no more than 2 decimal places.');
                 redirect(APP_URL . '/public/accounting/?view=students');
             }
             $amt = (float) $rawAmt;
-            $name = trim($catNames[$catId] ?? "Fee Aspect #{$catId}");
+            $name = trim($catNames[$catId] ?? ($category['name'] ?? "Fee Aspect #{$catId}"));
 
             $selectedItems[] = [
                 'fee_category_id' => $catId,
@@ -104,6 +105,9 @@ class AccountingController
             Auth::setFlash('error', 'Please include at least one fee category in the assessment.');
             redirect(APP_URL . '/public/accounting/?view=students');
         }
+
+        // Update student class and academic details
+        Student::updateClassDetails($studentId, $gradeLevel, $schoolYear);
 
         $feeId = (int) ($_POST['fee_id'] ?? 0);
         if ($feeId <= 0) {
@@ -226,6 +230,16 @@ class AccountingController
             redirect(APP_URL . '/public/accounting/?view=categories');
         }
 
+        if ($id <= 0) {
+            $db = Database::getInstance();
+            $dup = $db->prepare("SELECT id FROM fee_categories WHERE LOWER(TRIM(name)) = LOWER(?) AND approval_status = 'pending' LIMIT 1");
+            $dup->execute([$name]);
+            if ($dup->fetch()) {
+                Auth::setFlash('warning', "A pending approval request for '{$name}' has already been submitted to the Administrator.");
+                redirect(APP_URL . '/public/accounting/?view=categories');
+            }
+        }
+
         if ($id > 0) {
             FeeCategory::update($id, [
                 'name' => $name,
@@ -236,13 +250,35 @@ class AccountingController
             ]);
             Auth::setFlash('success', 'Fee category updated.');
         } else {
-            FeeCategory::create([
+            $catId = FeeCategory::requestCreate([
                 'name' => $name,
                 'default_amount' => $defaultAmount,
                 'is_variable' => $isVariable,
                 'sort_order' => $sortOrder
-            ]);
-            Auth::setFlash('success', 'Fee category added.');
+            ], (int) Auth::userId());
+
+            // Notify Administrator via email and system audit log
+            $adminUser = User::findByUsername('admin');
+            $adminEmail = $adminUser['email'] ?? 'admin@ncst.edu.ph';
+            $staff = User::findById((int) Auth::userId());
+            $staffName = $staff ? ($staff['name'] ?? $staff['username']) : 'Accounting Staff';
+
+            $subj = "Fee Category Approval Requested: {$name}";
+            $body = "<div style='font-family:sans-serif;padding:20px;color:#1e293b;line-height:1.6;'>"
+                . "<h2 style='color:#0b3d2e;margin-top:0;'>Fee Category Approval Request</h2>"
+                . "<p>Accounting staff <strong>" . e($staffName) . "</strong> has requested to add a new fee category to the system:</p>"
+                . "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;'>"
+                . "<p style='margin:4px 0;'><strong>Fee Category Name:</strong> " . e($name) . "</p>"
+                . "<p style='margin:4px 0;'><strong>Default Rate:</strong> " . peso($defaultAmount) . "</p>"
+                . "<p style='margin:4px 0;'><strong>Type:</strong> " . ($isVariable ? 'Variable Tuition (Subject Units)' : 'Fixed Institutional Fee') . "</p>"
+                . "<p style='margin:4px 0;'><strong>Requested Date:</strong> " . date('M d, Y h:i A') . "</p>"
+                . "</div>"
+                . "<p>Please sign in to the Admin Portal to review and approve or reject this request.</p>"
+                . "</div>";
+
+            Mailer::send($adminEmail, 'PayTrack Administrator', $subj, $body, 'fee_category_request');
+
+            Auth::setFlash('success', "Fee category '{$name}' requested successfully! It is now pending administrator approval before it can be used.");
         }
 
         redirect(APP_URL . '/public/accounting/?view=categories');
@@ -254,6 +290,16 @@ class AccountingController
         verify_csrf();
 
         $id = (int) ($_POST['category_id'] ?? 0);
+        if ($id <= 0) {
+            $db = Database::getInstance();
+            $dup = $db->prepare("SELECT id FROM fee_categories WHERE LOWER(TRIM(name)) = LOWER(?) AND approval_status = 'pending' LIMIT 1");
+            $dup->execute([$name]);
+            if ($dup->fetch()) {
+                Auth::setFlash('warning', "A pending approval request for '{$name}' has already been submitted to the Administrator.");
+                redirect(APP_URL . '/public/accounting/?view=categories');
+            }
+        }
+
         if ($id > 0) {
             try {
                 FeeCategory::delete($id);
@@ -315,8 +361,6 @@ class AccountingController
             $totalAssessed += (float) ($f['total_amount'] ?? 0);
         }
 
-        // Save class changes only after every submitted fee amount is valid.
-        Student::updateClassDetails($studentId, $gradeLevel, $schoolYear);
         $totalReceivables = max(0, $totalAssessed - $totalRevenue);
         $collectionRate = ($totalAssessed > 0) ? min(100, round(($totalRevenue / $totalAssessed) * 100, 1)) : 0;
 
@@ -361,6 +405,26 @@ class AccountingController
             ];
         }
 
+        // Fetch fee categories for real-time live sync
+        $rawCategories = FeeCategory::all();
+        $categoriesList = [];
+        foreach ($rawCategories as $rcat) {
+            $categoriesList[] = [
+                'id' => (int) $rcat['id'],
+                'name' => $rcat['name'],
+                'code' => $rcat['code'],
+                'default_amount' => (float) $rcat['default_amount'],
+                'formatted_amount' => peso($rcat['default_amount']),
+                'is_variable' => (int) ($rcat['is_variable'] ?? 0),
+                'approval_status' => $rcat['approval_status'] ?? 'approved',
+                'rejection_reason' => $rcat['rejection_reason'] ?? '',
+                'sort_order' => (int) ($rcat['sort_order'] ?? 99),
+                'requested_at' => $rcat['requested_at'] ?? '',
+                'reviewed_at' => $rcat['reviewed_at'] ?? '',
+            ];
+        }
+        $pendingApprovalsCount = FeeCategory::countPendingApprovals();
+
         // Check latest unread email logs / notifications
         $emailLogs = $db->query("SELECT id, recipient_email, subject, type, status, sent_at FROM email_logs ORDER BY sent_at DESC LIMIT 10")->fetchAll();
 
@@ -379,7 +443,10 @@ class AccountingController
             ],
             'students' => $studentBalances,
             'assessments' => $assessmentBalances,
-            'recent_notifications' => $emailLogs
+            'recent_notifications' => $emailLogs,
+            'categories' => $categoriesList,
+            'pending_fee_count' => $pendingApprovalsCount,
+            'categories_hash' => md5(json_encode($categoriesList))
         ]);
         exit;
     }

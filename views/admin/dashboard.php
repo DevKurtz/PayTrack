@@ -12,8 +12,13 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PayTrack — System Administrator</title>
+    <!-- Bootstrap 5.3 (Local & CDN with Subresource Integrity) -->
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/bootstrap/css/bootstrap.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- jQuery 3.7.1 for AJAX Operations -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/portal-chrome.css?v=<?= filemtime(__DIR__ . '/../../assets/css/portal-chrome.css') ?>">
     <style>
@@ -118,6 +123,14 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                 </a>
             </li>
             <li>
+                <a href="<?= APP_URL ?>/public/admin/?view=fee_approvals" class="nav-item <?= $currentView === 'fee_approvals' ? 'active' : '' ?>">
+                    <span class="ic">&#9881;</span> Fee Approvals
+                    <?php if (!empty($pendingFeeCount) && $pendingFeeCount > 0): ?>
+                        <span class="badge-count" style="background: #dc2626; color: #fff; font-weight: 800;"><?= $pendingFeeCount ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <li>
                 <a href="<?= APP_URL ?>/public/admin/?view=logs" class="nav-item <?= $currentView === 'logs' ? 'active' : '' ?>">
                     <span class="ic">&#9993;</span> System Email Logs
                     <span class="badge-count"><?= $totalLogsCount ?></span>
@@ -154,6 +167,21 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
             <div class="topbar-actions" style="display: flex; align-items: center; gap: 12px;">
                 <?php
                 $adminNotifs = [];
+
+                // Display each pending fee category request from Accounting
+                if (!empty($pendingFeeCategories)) {
+                    foreach ($pendingFeeCategories as $pReq) {
+                        $adminNotifs[] = [
+                            'type' => 'warning',
+                            'icon' => '⏳',
+                            'title' => 'New Fee Request: ' . $pReq['name'],
+                            'desc' => peso($pReq['default_amount']) . ' · Requested by ' . ($pReq['requester_name'] ?: 'Accounting Office'),
+                            'time' => date('M d, h:i A', strtotime($pReq['requested_at'] ?? 'now')),
+                            'link' => APP_URL . '/public/admin/?view=fee_approvals',
+                            'unread' => true,
+                        ];
+                    }
+                }
                 if ($onlineCount > 0) {
                     $adminNotifs[] = [
                         'type' => 'success',
@@ -182,7 +210,7 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                         'desc' => $totalLogsCount . ' recent system notices and credential emails logged.',
                         'time' => 'System Logs',
                         'link' => APP_URL . '/public/admin/?view=logs',
-                        'unread' => true,
+                        'unread' => false,
                     ];
                 }
                 $adminUnread = 0;
@@ -658,16 +686,64 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                         </div>
                         <div>
                             <h1 class="portal-page-title">System-Wide Email Audit Logs</h1>
-                            <p class="portal-page-sub">Trace all automated emails sent to students, parents, and accounting staff.</p>
+                            <p class="portal-page-sub">Trace, filter, and inspect automated emails sent to students, parents, and accounting staff.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Filter & Search Toolbar -->
+                <div class="section-box" style="margin-bottom: 20px; padding: 18px 22px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
+                            <!-- Search Bar -->
+                            <div class="search-container" style="flex: 1; min-width: 240px; max-width: 380px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" id="logSearchInput" placeholder="Search recipient email, subject, or keyword..." value="<?= e($logSearch) ?>">
+                            </div>
+
+                            <!-- Event Type Filter -->
+                            <select class="form-control" id="logTypeFilter" style="width: auto; min-width: 170px; height: 38px; font-size: 12.5px;" onchange="onLogFilterChange()">
+                                <option value="all" <?= $logType === '' || $logType === 'all' ? 'selected' : '' ?>>All Event Types</option>
+                                <?php foreach ($distinctEmailTypes as $dType): ?>
+                                    <option value="<?= e($dType) ?>" <?= $logType === $dType ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $dType))) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <!-- Delivery Status Filter -->
+                            <select class="form-control" id="logStatusFilter" style="width: auto; min-width: 140px; height: 38px; font-size: 12.5px;" onchange="onLogFilterChange()">
+                                <option value="all" <?= $logStatus === '' || $logStatus === 'all' ? 'selected' : '' ?>>All Statuses</option>
+                                <option value="sent" <?= $logStatus === 'sent' ? 'selected' : '' ?>>✓ Sent</option>
+                                <option value="failed" <?= $logStatus === 'failed' ? 'selected' : '' ?>>✕ Failed</option>
+                            </select>
+
+                            <!-- Date Range Filter -->
+                            <select class="form-control" id="logDateFilter" style="width: auto; min-width: 130px; height: 38px; font-size: 12.5px;" onchange="onLogFilterChange()">
+                                <option value="all" <?= $logDate === '' || $logDate === 'all' ? 'selected' : '' ?>>All Dates</option>
+                                <option value="today" <?= $logDate === 'today' ? 'selected' : '' ?>>Today</option>
+                                <option value="7days" <?= $logDate === '7days' ? 'selected' : '' ?>>Last 7 Days</option>
+                                <option value="30days" <?= $logDate === '30days' ? 'selected' : '' ?>>Last 30 Days</option>
+                            </select>
+
+                            <button type="button" class="btn" style="height: 38px; padding: 0 14px; font-size: 12.5px;" onclick="resetLogFilters()">
+                                Reset
+                            </button>
+                        </div>
+
+                        <div style="font-size: 12px; color: #64748b; font-weight: 600;">
+                            Showing <span id="logVisibleCount" style="color: #0f172a; font-weight: 700;"><?= count($emailLogs) ?></span> of <?= $totalLogsCount ?> email logs
                         </div>
                     </div>
                 </div>
 
                 <div class="section-box">
                     <div class="table-responsive">
-                        <table class="styled-fintech-table">
+                        <table class="styled-fintech-table" id="emailLogsTable">
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Recipient Email</th>
                                     <th>Subject</th>
                                     <th>Event Type</th>
@@ -677,24 +753,185 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                             </thead>
                             <tbody>
                                 <?php if (empty($emailLogs)): ?>
-                                    <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 32px;">No email audit records.</td></tr>
+                                    <tr id="noEmailLogsRow"><td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px;">No email audit records found.</td></tr>
                                 <?php else: ?>
-                                    <?php foreach ($emailLogs as $log): ?>
-                                        <tr>
+                                    <?php foreach ($emailLogs as $idx => $log): ?>
+                                        <tr class="log-row" 
+                                            data-email="<?= strtolower(e($log['recipient_email'])) ?>" 
+                                            data-subject="<?= strtolower(e($log['subject'])) ?>" 
+                                            data-type="<?= e($log['type']) ?>" 
+                                            data-status="<?= e($log['status']) ?>"
+                                            data-time="<?= e($log['sent_at']) ?>">
+                                            <td style="color:#94a3b8; font-size:12px; width:36px;"><?= $idx + 1 ?></td>
                                             <td><strong><?= e($log['recipient_email']) ?></strong></td>
                                             <td><?= e($log['subject']) ?></td>
-                                            <td><span class="badge info"><?= e($log['type']) ?></span></td>
+                                            <td>
+                                                <span class="badge info" style="text-transform: capitalize; background: #e0f2fe; color: #0369a1; border-radius: 6px; padding: 4px 8px; font-size: 11px;">
+                                                    <?= e(str_replace('_', ' ', $log['type'])) ?>
+                                                </span>
+                                            </td>
                                             <td>
                                                 <?php if ($log['status'] === 'sent'): ?>
-                                                    <span class="badge success">Sent</span>
+                                                    <span class="status-badge-pill active"><span class="dot"></span> Sent</span>
                                                 <?php else: ?>
-                                                    <span class="badge danger">Failed</span>
+                                                    <span class="status-badge-pill inactive"><span class="dot"></span> Failed</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?= date('M d, Y h:i A', strtotime($log['sent_at'])) ?></td>
+                                            <td style="color: #64748b; font-size: 12px;"><?= date('M d, Y h:i A', strtotime($log['sent_at'])) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            <!-- ============================================== -->
+            <!-- VIEW 3: FEE CATEGORY APPROVALS                -->
+            <!-- ============================================== -->
+            <?php elseif ($currentView === 'fee_approvals'): ?>
+                <div class="portal-header-row">
+                    <div class="portal-title-flex">
+                        <div class="wallet-icon-box" style="background: #fef3c7; color: #b45309;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="portal-page-title">Fee Category Approval Governance</h1>
+                            <p class="portal-page-sub">Review, approve, or reject new fee categories requested by the Accounting Office.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Approvals Section -->
+                <div class="section-box" style="margin-bottom: 24px;">
+                    <div class="section-box-header">
+                        <div class="section-header-left">
+                            <div class="section-header-icon" style="background:#fef3c7; color:#b45309;">⏳</div>
+                            <h2 class="section-box-title">Pending Fee Category Requests (<?= $pendingFeeCount ?>)</h2>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="styled-fintech-table">
+                            <thead>
+                                <tr>
+                                    <th>Fee Category Name</th>
+                                    <th>Code</th>
+                                    <th>Default Rate</th>
+                                    <th>Type</th>
+                                    <th>Requested By</th>
+                                    <th>Requested At</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingApprovalsTbody">
+                                <?php if (empty($pendingFeeCategories)): ?>
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: #059669; padding: 36px; background: #f0fdf4;">
+                                            <div style="font-size: 20px; margin-bottom: 6px;">✓</div>
+                                            <strong>All fee category requests are up to date!</strong>
+                                            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">There are currently no pending fee requests from Accounting.</div>
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($pendingFeeCategories as $pCat): ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= e($pCat['name']) ?></strong>
+                                            </td>
+                                            <td><code><?= e($pCat['code']) ?></code></td>
+                                            <td><strong style="color: #0b3d2e; font-size: 14px;"><?= peso((float)$pCat['default_amount']) ?></strong></td>
+                                            <td>
+                                                <span class="pill-badge <?= !empty($pCat['is_variable']) ? 'green' : 'blue' ?>">
+                                                    <?= !empty($pCat['is_variable']) ? 'Variable (Tuition)' : 'Fixed Institutional' ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong><?= e($pCat['requester_name'] ?? $pCat['requester_username'] ?? 'Accounting Staff') ?></strong>
+                                                <div style="font-size: 11px; color: #64748b;"><?= e($pCat['requester_email'] ?? '') ?></div>
+                                            </td>
+                                            <td style="color: #64748b; font-size: 12px;">
+                                                <?= !empty($pCat['requested_at']) ? date('M d, Y h:i A', strtotime($pCat['requested_at'])) : '—' ?>
+                                            </td>
+                                            <td style="text-align: right;">
+                                                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                                    <!-- Approve Button -->
+                                                    <form method="POST" action="<?= APP_URL ?>/public/admin/?view=fee_approvals" style="display:inline;" id="approveForm_<?= $pCat['id'] ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="action" value="approve_fee_category">
+                                                        <input type="hidden" name="category_id" value="<?= $pCat['id'] ?>">
+                                                        <button type="button" class="btn" style="background: #059669; color: #ffffff; padding: 6px 14px; font-weight: 700; font-size: 12px; border: none; border-radius: 6px;"
+                                                            onclick="confirmApproveFee(<?= $pCat['id'] ?>, '<?= htmlspecialchars($pCat['name'], ENT_QUOTES) ?>')">
+                                                            Approve ✓
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Reject Button -->
+                                                    <button type="button" class="btn" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 6px 14px; font-weight: 700; font-size: 12px; border-radius: 6px;"
+                                                        onclick="openRejectFeeModal(<?= $pCat['id'] ?>, '<?= htmlspecialchars($pCat['name'], ENT_QUOTES) ?>')">
+                                                        Reject ✕
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- All Fee Categories Status Overview -->
+                <div class="section-box">
+                    <div class="section-box-header">
+                        <div class="section-header-left">
+                            <div class="section-header-icon" style="background:#eff6ff; color:#2563eb;">📚</div>
+                            <h2 class="section-box-title">System Fee Categories Master Directory</h2>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="styled-fintech-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Category Name</th>
+                                    <th>Code</th>
+                                    <th>Rate</th>
+                                    <th>Type</th>
+                                    <th>Approval Status</th>
+                                    <th>Last Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($allFeeCategories as $idx => $catItem): ?>
+                                    <tr>
+                                        <td style="color:#94a3b8; font-size:12px;"><?= $idx + 1 ?></td>
+                                        <td><strong><?= e($catItem['name']) ?></strong></td>
+                                        <td><code><?= e($catItem['code']) ?></code></td>
+                                        <td><strong><?= peso((float)$catItem['default_amount']) ?></strong></td>
+                                        <td>
+                                            <span class="pill-badge <?= !empty($catItem['is_variable']) ? 'green' : 'blue' ?>">
+                                                <?= !empty($catItem['is_variable']) ? 'Variable' : 'Fixed' ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <?php if ($catItem['approval_status'] === 'approved'): ?>
+                                                <span class="status-badge-pill active"><span class="dot"></span> Approved &amp; Active</span>
+                                            <?php elseif ($catItem['approval_status'] === 'pending'): ?>
+                                                <span class="status-badge-pill" style="background:#fef3c7; color:#b45309;"><span class="dot" style="background:#b45309;"></span> Pending Review</span>
+                                            <?php else: ?>
+                                                <span class="status-badge-pill inactive" title="<?= e($catItem['rejection_reason'] ?? 'Rejected') ?>"><span class="dot"></span> Rejected</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td style="color: #64748b; font-size: 12px;">
+                                            <?= !empty($catItem['reviewed_at']) ? 'Reviewed ' . date('M d, Y', strtotime($catItem['reviewed_at'])) : (!empty($catItem['requested_at']) ? 'Requested ' . date('M d, Y', strtotime($catItem['requested_at'])) : date('M d, Y', strtotime($catItem['created_at']))) ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -833,6 +1070,35 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
                 <button type="button" class="btn" onclick="document.getElementById('createAccountingModal').classList.remove('active')">Cancel</button>
                 <button type="submit" class="btn" id="btnCreateAccSubmit" style="background: #0f172a; color: #fff; font-weight: 700; padding: 10px 22px;">
                     Create &amp; Email Credentials
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- MODAL: REJECT FEE CATEGORY REQUEST -->
+<!-- ==================================================== -->
+<div class="modal-backdrop" id="rejectFeeModal">
+    <div class="modal-window" style="max-width: 480px;">
+        <button class="modal-close-x" onclick="document.getElementById('rejectFeeModal').classList.remove('active')">&times;</button>
+        <h2 class="modal-header-title" style="color: #dc2626;">Reject Fee Category Request</h2>
+        <p class="modal-header-sub" id="rejectModalCatName">Category: Assessment Fee</p>
+
+        <form method="POST" action="<?= APP_URL ?>/public/admin/?view=fee_approvals" id="rejectFeeForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="reject_fee_category">
+            <input type="hidden" name="category_id" id="rejectCategoryId" value="">
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="rejectionReason">Reason for Disapproval *</label>
+                <textarea class="form-control" name="rejection_reason" id="rejectionReason" required rows="3" placeholder="Provide explanation for accounting staff (e.g. Duplicate institutional charge, invalid rate amount, or requires board approval)..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn" onclick="document.getElementById('rejectFeeModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn" style="background: #dc2626; color: #fff; font-weight: 700; padding: 9px 20px;">
+                    Confirm Rejection
                 </button>
             </div>
         </form>
@@ -1090,6 +1356,110 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
         btnAdminNotif?.classList.remove('active');
     });
 
+    // ── SweetAlert / Approval for Fee Categories ──
+    window.confirmApproveFee = function(catId, catName) {
+        Swal.fire({
+            title: 'Approve Fee Category?',
+            html: `Are you sure you want to approve and activate <strong>${catName}</strong>?<br><br><span style="color:#059669;font-size:12.5px;">This fee category will become active and available for student tuition assessments.</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Approve Fee',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('approveForm_' + catId)?.submit();
+            }
+        });
+    };
+
+    window.openRejectFeeModal = function(catId, catName) {
+        document.getElementById('rejectCategoryId').value = catId;
+        document.getElementById('rejectModalCatName').textContent = 'Category: ' + catName;
+        document.getElementById('rejectionReason').value = '';
+        document.getElementById('rejectFeeModal')?.classList.add('active');
+    };
+
+    // ── Email Logs Real-Time Client & URL Filtering ──
+    const logSearchInput = document.getElementById('logSearchInput');
+    const logTypeFilter = document.getElementById('logTypeFilter');
+    const logStatusFilter = document.getElementById('logStatusFilter');
+    const logDateFilter = document.getElementById('logDateFilter');
+    const logVisibleCount = document.getElementById('logVisibleCount');
+
+    function applyEmailLogFilters() {
+        const rows = document.querySelectorAll('#emailLogsTable tbody tr.log-row');
+        if (!rows.length) return;
+
+        const q = (logSearchInput?.value || '').toLowerCase().trim();
+        const type = logTypeFilter?.value || 'all';
+        const status = logStatusFilter?.value || 'all';
+        const dateRange = logDateFilter?.value || 'all';
+
+        const now = new Date();
+        let visible = 0;
+
+        rows.forEach(row => {
+            const rowEmail = row.getAttribute('data-email') || '';
+            const rowSubj = row.getAttribute('data-subject') || '';
+            const rowType = row.getAttribute('data-type') || '';
+            const rowStatus = row.getAttribute('data-status') || '';
+            const rowTimeStr = row.getAttribute('data-time') || '';
+            const rowDate = new Date(rowTimeStr);
+
+            const matchSearch = !q || rowEmail.includes(q) || rowSubj.includes(q) || rowType.includes(q);
+            const matchType = (type === 'all' || rowType === type);
+            const matchStatus = (status === 'all' || rowStatus === status);
+
+            let matchDate = true;
+            if (dateRange === 'today') {
+                matchDate = rowDate.toDateString() === now.toDateString();
+            } else if (dateRange === '7days') {
+                const diffDays = (now - rowDate) / (1000 * 60 * 60 * 24);
+                matchDate = diffDays <= 7;
+            } else if (dateRange === '30days') {
+                const diffDays = (now - rowDate) / (1000 * 60 * 60 * 24);
+                matchDate = diffDays <= 30;
+            }
+
+            if (matchSearch && matchType && matchStatus && matchDate) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (logVisibleCount) logVisibleCount.textContent = visible;
+
+        let noRow = document.getElementById('noEmailLogsRow');
+        if (visible === 0) {
+            if (!noRow) {
+                const tbody = document.querySelector('#emailLogsTable tbody');
+                noRow = document.createElement('tr');
+                noRow.id = 'noEmailLogsRow';
+                noRow.innerHTML = '<td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px;">No email audit records matched your filter.</td>';
+                tbody.appendChild(noRow);
+            } else {
+                noRow.style.display = '';
+            }
+        } else if (noRow) {
+            noRow.style.display = 'none';
+        }
+    }
+
+    logSearchInput?.addEventListener('input', applyEmailLogFilters);
+    window.onLogFilterChange = applyEmailLogFilters;
+
+    window.resetLogFilters = function() {
+        if (logSearchInput) logSearchInput.value = '';
+        if (logTypeFilter) logTypeFilter.value = 'all';
+        if (logStatusFilter) logStatusFilter.value = 'all';
+        if (logDateFilter) logDateFilter.value = 'all';
+        applyEmailLogFilters();
+    };
+
     <?php if (!empty($studentFormErrors)): ?>
         openEnrollStudentModal();
     <?php endif; ?>
@@ -1101,6 +1471,121 @@ $studentError = static fn(string $key): string => !empty($studentFormErrors[$key
             confirmButtonColor: '#0b3d2e'
         });
     <?php endif; ?>
+        // ── Real-Time Live Feed for Admin Fee Approvals via AJAX (every 2.5 seconds) ──
+    let lastAdminApprovalsHash = null;
+
+    function renderAdminPendingRowHtml(p) {
+        const isVar = p.is_variable == 1;
+        const typeBadge = isVar
+            ? '<span class="pill-badge green">Variable (Tuition)</span>'
+            : '<span class="pill-badge blue">Fixed Institutional</span>';
+        const reqName = (p.requester_name || p.requester_username || 'Accounting Office');
+        const reqEmail = (p.requester_email || '');
+        const reqDate = p.requested_at || 'Just now';
+        const amount = '₱' + parseFloat(p.default_amount).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        return `
+            <tr>
+                <td><strong>${p.name}</strong></td>
+                <td><code>${p.code}</code></td>
+                <td><strong style="color: #0b3d2e; font-size: 14px;">${amount}</strong></td>
+                <td>${typeBadge}</td>
+                <td>
+                    <strong>${reqName}</strong>
+                    <div style="font-size: 11px; color: #64748b;">${reqEmail}</div>
+                </td>
+                <td style="color: #64748b; font-size: 12px;">${reqDate}</td>
+                <td style="text-align: right;">
+                    <div style="display: inline-flex; align-items: center; gap: 8px;">
+                        <form method="POST" action="<?= APP_URL ?>/public/admin/?view=fee_approvals" style="display:inline;" id="approveForm_${p.id}">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="approve_fee_category">
+                            <input type="hidden" name="category_id" value="${p.id}">
+                            <button type="button" class="btn" style="background: #059669; color: #ffffff; padding: 6px 14px; font-weight: 700; font-size: 12px; border: none; border-radius: 6px;"
+                                onclick="confirmApproveFee(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+                                Approve ✓
+                            </button>
+                        </form>
+                        <button type="button" class="btn" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 6px 14px; font-weight: 700; font-size: 12px; border-radius: 6px;"
+                            onclick="openRejectFeeModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+                            Reject ✕
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    function pollAdminLiveAjax() {
+        $.ajax({
+            url: '<?= APP_URL ?>/public/admin/?action=live_fee_approvals&_t=' + Date.now(),
+            type: 'GET',
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                if (!data || !data.success) return;
+
+                if (lastAdminApprovalsHash !== null && lastAdminApprovalsHash !== data.hash) {
+                    const tbody = document.getElementById('pendingApprovalsTbody');
+                    if (tbody) {
+                        if (!data.pending_categories || data.pending_categories.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: #059669; padding: 36px; background: #f0fdf4;">
+                                        <div style="font-size: 20px; margin-bottom: 6px;">✓</div>
+                                        <strong>All fee category requests are up to date!</strong>
+                                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">There are currently no pending fee requests from Accounting.</div>
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML = data.pending_categories.map(renderAdminPendingRowHtml).join('');
+                        }
+                    }
+
+                    // Update title counter
+                    const headerTitle = document.querySelector('.section-box-title');
+                    if (headerTitle && headerTitle.textContent.includes('Pending Fee Category Requests')) {
+                        headerTitle.textContent = `Pending Fee Category Requests (${data.pending_count})`;
+                    }
+
+                    // Update nav badge
+                    const navBadge = document.querySelector('a[href*="view=fee_approvals"] .badge');
+                    if (navBadge) {
+                        if (data.pending_count > 0) {
+                            navBadge.textContent = `${data.pending_count} pending`;
+                            navBadge.style.display = 'inline-block';
+                        } else {
+                            navBadge.style.display = 'none';
+                        }
+                    }
+
+                    // Toast
+                    if (window.Swal && data.pending_count > 0) {
+                        Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 4500,
+                            timerProgressBar: true
+                        }).fire({
+                            icon: 'warning',
+                            title: `Fee Approval Requests updated in real-time (${data.pending_count} pending)`
+                        });
+                    }
+                }
+                lastAdminApprovalsHash = data.hash;
+            }
+        });
+    }
+
+    // Poll every 2.5 seconds
+    setInterval(pollAdminLiveAjax, 2500);
+    window.addEventListener('focus', pollAdminLiveAjax);
 </script>
+
+<!-- Bootstrap 5.3 JS (CDN with Subresource Integrity & Local Fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="<?= APP_URL ?>/assets/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>

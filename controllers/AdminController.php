@@ -210,13 +210,86 @@ class AdminController
             redirect(APP_URL . '/public/admin/?view=users');
         }
 
-        if ($userId === Auth::userId()) {
-            Auth::setFlash('error', 'Action prohibited: You cannot change status on your own logged-in account.');
-            redirect(APP_URL . '/public/admin/?view=users');
-        }
-
         User::updateStatus($userId, $status);
         Auth::setFlash('success', "User account status updated to " . ucfirst($status) . ".");
         redirect(APP_URL . '/public/admin/?view=users');
     }
+
+    public static function approveFeeCategory(): void
+    {
+        Auth::requireRole('admin');
+        verify_csrf();
+
+        $catId = (int) ($_POST['category_id'] ?? 0);
+        if ($catId <= 0) {
+            Auth::setFlash('error', 'Invalid category ID.');
+            redirect(APP_URL . '/public/admin/?view=fee_approvals');
+        }
+
+        $category = FeeCategory::findById($catId);
+        if (!$category) {
+            Auth::setFlash('error', 'Fee category not found.');
+            redirect(APP_URL . '/public/admin/?view=fee_approvals');
+        }
+
+        FeeCategory::approve($catId, (int) Auth::userId());
+
+        // Notify Accounting requester if available
+        if (!empty($category['requested_by'])) {
+            $requester = User::findById((int) $category['requested_by']);
+            if ($requester && !empty($requester['email'])) {
+                $subj = "Approved: Fee Category Request '{$category['name']}'";
+                $body = "<div style='font-family:sans-serif;padding:20px;color:#1e293b;line-height:1.6;'>"
+                    . "<h2 style='color:#059669;margin-top:0;'>Fee Category Approved</h2>"
+                    . "<p>Good day " . e($requester['name'] ?? 'Accounting Staff') . ",</p>"
+                    . "<p>Your request to add fee category <strong>" . e($category['name']) . "</strong> (" . peso((float)$category['default_amount']) . ") has been <strong>approved</strong> by the Administrator and is now active for student tuition assessments.</p>"
+                    . "</div>";
+                Mailer::send($requester['email'], $requester['name'] ?? 'Accounting Staff', $subj, $body, 'fee_category_approved');
+            }
+        }
+
+        Auth::setFlash('success', "Fee category '{$category['name']}' approved and activated successfully.");
+        redirect(APP_URL . '/public/admin/?view=fee_approvals');
+    }
+
+    public static function rejectFeeCategory(): void
+    {
+        Auth::requireRole('admin');
+        verify_csrf();
+
+        $catId = (int) ($_POST['category_id'] ?? 0);
+        $reason = trim(strip_tags($_POST['rejection_reason'] ?? 'Rejected by Administrator'));
+
+        if ($catId <= 0) {
+            Auth::setFlash('error', 'Invalid category ID.');
+            redirect(APP_URL . '/public/admin/?view=fee_approvals');
+        }
+
+        $category = FeeCategory::findById($catId);
+        if (!$category) {
+            Auth::setFlash('error', 'Fee category not found.');
+            redirect(APP_URL . '/public/admin/?view=fee_approvals');
+        }
+
+        FeeCategory::reject($catId, (int) Auth::userId(), $reason);
+
+        // Notify Accounting requester
+        if (!empty($category['requested_by'])) {
+            $requester = User::findById((int) $category['requested_by']);
+            if ($requester && !empty($requester['email'])) {
+                $subj = "Disapproved: Fee Category Request '{$category['name']}'";
+                $body = "<div style='font-family:sans-serif;padding:20px;color:#1e293b;line-height:1.6;'>"
+                    . "<h2 style='color:#dc2626;margin-top:0;'>Fee Category Request Declined</h2>"
+                    . "<p>Good day " . e($requester['name'] ?? 'Accounting Staff') . ",</p>"
+                    . "<p>Your request to add fee category <strong>" . e($category['name']) . "</strong> was reviewed and <strong>rejected</strong> by the Administrator.</p>"
+                    . "<p><strong>Reason:</strong> " . e($reason) . "</p>"
+                    . "</div>";
+                Mailer::send($requester['email'], $requester['name'] ?? 'Accounting Staff', $subj, $body, 'fee_category_rejected');
+            }
+        }
+
+        Auth::setFlash('success', "Fee category '{$category['name']}' has been rejected.");
+        redirect(APP_URL . '/public/admin/?view=fee_approvals');
+    }
 }
+

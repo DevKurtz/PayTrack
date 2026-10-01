@@ -27,6 +27,14 @@ class Payment
         return $stmt->fetchAll();
     }
 
+    public static function getByFeeId(int $feeId): array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM payments WHERE tuition_fee_id = ? ORDER BY paid_at DESC, id DESC");
+        $stmt->execute([$feeId]);
+        return $stmt->fetchAll();
+    }
+
     public static function create(int $feeId, int $studentId, string $orNumber, float $amount, string $method = 'cash', ?string $notes = null): int
     {
         $db = Database::getInstance();

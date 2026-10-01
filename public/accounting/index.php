@@ -48,7 +48,13 @@ $currentView = $_GET['view'] ?? 'home';
 
 $students = Student::all();
 $fees = TuitionFee::all();
+foreach ($fees as &$feeItem) {
+    $feeItem['payments'] = Payment::getByFeeId((int)$feeItem['id']);
+}
+unset($feeItem);
+
 $payments = Payment::all();
+$allFeeCategories = FeeCategory::all();
 $feeCategories = FeeCategory::allActive();
 
 // Check assessment status for each student
@@ -79,6 +85,15 @@ $collectionRate = ($totalAssessed > 0) ? min(100, round(($totalRevenue / $totalA
 // Query email logs
 $db = Database::getInstance();
 $emailLogs = $db->query("SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT 60")->fetchAll();
+
+// Query recent fee category updates for accounting notification bell
+$recentCategoryNotifs = $db->query("
+    SELECT id, name, default_amount, approval_status, rejection_reason, requested_at, reviewed_at
+    FROM fee_categories
+    WHERE approval_status IN ('pending', 'approved', 'rejected')
+    ORDER BY COALESCE(reviewed_at, requested_at) DESC
+    LIMIT 8
+")->fetchAll();
 
 $successMsg = Auth::getFlash('success');
 $errorMsg = Auth::getFlash('error');

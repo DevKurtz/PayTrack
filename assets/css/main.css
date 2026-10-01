@@ -1304,3 +1304,102 @@ tbody td {
     max-width: none;
   }
 }
+
+/* ============================================================
+   BOOTSTRAP 5.3 COMPATIBILITY & MOBILE OPTIMIZATIONS
+   Preserves PayTrack design system while enabling Bootstrap features
+   ============================================================ */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Custom Modal Compatibility with Bootstrap ── */
+div.modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 10500 !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.22s ease !important;
+}
+div.modal-backdrop.active,
+div.modal-backdrop.show {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+div.modal-window {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 28px !important;
+  width: 92% !important;
+  max-width: 680px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3) !important;
+  position: relative !important;
+  z-index: 10501 !important;
+  margin: auto !important;
+}
+
+/* ── Mobile Form & Table Stability ── */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    box-shadow: 0 0 25px rgba(0,0,0,0.25);
+    z-index: 99999 !important;
+    background: #ffffff !important;
+  }
+  .sidebar.active,
+  .sidebar.drawer-open {
+    transform: translateX(0) !important;
+  }
+  .main-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 16px 12px !important;
+  }
+  .topbar {
+    padding: 12px 14px !important;
+  }
+  .portal-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .hero-dashboard-grid,
+  .dashboard-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .modal-window {
+    padding: 20px 16px !important;
+    width: 95% !important;
+  }
+}

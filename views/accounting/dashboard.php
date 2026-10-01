@@ -12,6 +12,11 @@ $accountingName = Auth::username() ?? 'accounting';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayTrack — Accounting Portal</title>
+    <!-- Bootstrap 5.3 (Local & CDN with Subresource Integrity) -->
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/bootstrap/css/bootstrap.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- jQuery 3.7.1 for AJAX Operations -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/portal-chrome.css?v=<?= filemtime(__DIR__ . '/../../assets/css/portal-chrome.css') ?>">
     <style>
@@ -241,6 +246,32 @@ $accountingName = Auth::username() ?? 'accounting';
             .assessment-modal-icon { width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px; }
             .assessment-modal-heading .modal-header-title { font-size: 17px; }
         }
+        @media print {
+            body * { visibility: hidden !important; }
+            #receiptModal.active, #receiptModal.active #receiptPrintArea, #receiptModal.active #receiptPrintArea *,
+            #assessmentReceiptModal.active, #assessmentReceiptModal.active #assessmentReceiptPrintArea, #assessmentReceiptModal.active #assessmentReceiptPrintArea * {
+                visibility: visible !important;
+            }
+            #assessmentReceiptModal.active, #receiptModal.active {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: #ffffff !important;
+            }
+            #assessmentReceiptModal.active .modal-window, #receiptModal.active .modal-window {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .modal-close-x, .modal-actions-footer, .no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="admin-body">
@@ -329,6 +360,45 @@ $accountingName = Auth::username() ?? 'accounting';
             <div class="topbar-actions" style="display: flex; align-items: center; gap: 12px;">
                 <?php
                 $accNotifs = [];
+
+                // Add Fee Category status notices
+                if (!empty($recentCategoryNotifs)) {
+                    foreach ($recentCategoryNotifs as $rc) {
+                        $rcStatus = $rc['approval_status'] ?? 'approved';
+                        if ($rcStatus === 'approved' && !empty($rc['reviewed_at'])) {
+                            $accNotifs[] = [
+                                'type' => 'success',
+                                'icon' => '✓',
+                                'title' => 'Fee Category Approved: ' . $rc['name'],
+                                'desc' => 'Admin approved ' . $rc['name'] . ' (' . peso($rc['default_amount']) . '). Active for student tuition.',
+                                'time' => date('M d, h:i A', strtotime($rc['reviewed_at'])),
+                                'link' => APP_URL . '/public/accounting/?view=categories',
+                                'unread' => true,
+                            ];
+                        } elseif ($rcStatus === 'rejected' && !empty($rc['reviewed_at'])) {
+                            $accNotifs[] = [
+                                'type' => 'danger',
+                                'icon' => '✕',
+                                'title' => 'Fee Category Rejected: ' . $rc['name'],
+                                'desc' => 'Reason: ' . ($rc['rejection_reason'] ?: 'Not approved by admin'),
+                                'time' => date('M d, h:i A', strtotime($rc['reviewed_at'])),
+                                'link' => APP_URL . '/public/accounting/?view=categories',
+                                'unread' => true,
+                            ];
+                        } elseif ($rcStatus === 'pending') {
+                            $accNotifs[] = [
+                                'type' => 'warning',
+                                'icon' => '⏳',
+                                'title' => 'Pending Approval: ' . $rc['name'],
+                                'desc' => 'Submitted to Admin for review (' . peso($rc['default_amount']) . ').',
+                                'time' => date('M d, h:i A', strtotime($rc['requested_at'] ?? 'now')),
+                                'link' => APP_URL . '/public/accounting/?view=categories',
+                                'unread' => true,
+                            ];
+                        }
+                    }
+                }
+
                 if ($pendingAssessmentCount > 0) {
                     $accNotifs[] = [
                         'type' => 'warning',
@@ -894,13 +964,14 @@ $accountingName = Auth::username() ?? 'accounting';
                                                 <?php endif; ?>
                                             </td>
                                             <td style="text-align: right;">
-                                                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=fees" style="display: inline;" id="deleteFeeForm_<?= $f['id'] ?>">
-                                                    <?= csrf_field() ?>
-                                                    <input type="hidden" name="action" value="delete_fee">
-                                                    <input type="hidden" name="fee_id" value="<?= $f['id'] ?>">
-                                                    <button type="button" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
-                                                        onclick="confirmDeleteFee(<?= $f['id'] ?>, '<?= htmlspecialchars($f['description'], ENT_QUOTES) ?>')">Delete</button>
-                                                </form>
+                                                <button type="button" class="btn" style="padding: 5px 12px; font-size: 12px; font-weight: 600; color: #0b3d2e; border: 1.5px solid #0b3d2e; background: #f0fdf4; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;"
+                                                    onclick="viewAssessmentReceipt(<?= htmlspecialchars(json_encode($f), ENT_QUOTES) ?>)">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                    View Receipt
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -964,6 +1035,7 @@ $accountingName = Auth::username() ?? 'accounting';
                             </button>
                         </div>
                     </div>
+                    <?php $categoriesList = !empty($allFeeCategories) ? $allFeeCategories : $feeCategories; ?>
                     <div class="table-responsive" style="padding: 0 20px 20px;">
                         <table class="styled-fintech-table">
                             <thead>
@@ -972,34 +1044,87 @@ $accountingName = Auth::username() ?? 'accounting';
                                     <th>Fee Category Name</th>
                                     <th>Default Amount</th>
                                     <th>Type</th>
+                                    <th>Approval Status</th>
                                     <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <?php foreach ($feeCategories as $cat): ?>
-                                    <tr>
-                                        <td><code><?= e($cat['code']) ?></code></td>
-                                        <td><strong><?= e($cat['name']) ?></strong></td>
-                                        <td><strong style="color: #0b3d2e;"><?= peso($cat['default_amount']) ?></strong></td>
-                                        <td>
-                                            <?php if (!empty($cat['is_variable'])): ?>
-                                                <span class="badge info">Variable Remainder</span>
-                                            <?php else: ?>
-                                                <span class="badge success">Fixed Aspect</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td style="text-align: right;">
-                                            <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px;" onclick="openEditCategoryModal(<?= htmlspecialchars(json_encode($cat), ENT_QUOTES) ?>)">Edit</button>
-                                            <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_<?= $cat['id'] ?>">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="action" value="delete_fee_category">
-                                                <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
-                                                <button type="button" class="btn" style="padding: 4px 8px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
-                                                    onclick="confirmDeleteCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>')">Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                            <tbody id="categoryTableBody">
+                                <?php if (empty($categoriesList)): ?>
+                                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 28px;">No fee categories found. Click "+ Add Category" to request one.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($categoriesList as $cat): ?>
+                                        <?php $approval = $cat['approval_status'] ?? 'approved'; ?>
+                                        <tr>
+                                            <td><code><?= e($cat['code']) ?></code></td>
+                                            <td><strong><?= e($cat['name']) ?></strong></td>
+                                            <td><strong style="color: #0b3d2e;"><?= peso($cat['default_amount']) ?></strong></td>
+                                            <td>
+                                                <?php if (!empty($cat['is_variable'])): ?>
+                                                    <span class="badge info">Variable Remainder</span>
+                                                <?php else: ?>
+                                                    <span class="badge success">Fixed Aspect</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if ($approval === 'pending'): ?>
+                                                    <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                                                        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
+                                                        Pending Admin Approval
+                                                    </span>
+                                                <?php elseif ($approval === 'rejected'): ?>
+                                                    <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 600; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                                                        data-name="<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>"
+                                                        data-reason="<?= htmlspecialchars($cat['rejection_reason'] ?? '', ENT_QUOTES) ?>"
+                                                        onclick="showRejectionReason(this.dataset.name, this.dataset.reason)"
+                                                        title="Click to view rejection reason">
+                                                        ✕ Rejected
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge" style="background: #dcfce7; color: #166534; font-weight: 600; padding: 4px 8px; border-radius: 4px;">
+                                                        ✓ Approved &amp; Active
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="text-align: right;">
+                                                <?php if ($approval === 'pending'): ?>
+                                                    <button type="button" class="btn disabled" style="padding: 4px 8px; font-size: 11.5px; opacity: 0.65; cursor: not-allowed; background: #f1f5f9; color: #64748b;" disabled title="Awaiting Admin Review">
+                                                        ⏳ Under Review
+                                                    </button>
+                                                    <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_<?= $cat['id'] ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="action" value="delete_fee_category">
+                                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                                        <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                                                            onclick="confirmDeleteCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>', 'cancel')">Cancel Request</button>
+                                                    </form>
+                                                <?php elseif ($approval === 'rejected'): ?>
+                                                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #991b1b; border-color: #fecaca; background: #fff1f2; font-weight: 600;"
+                                                        data-name="<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>"
+                                                        data-reason="<?= htmlspecialchars($cat['rejection_reason'] ?? '', ENT_QUOTES) ?>"
+                                                        onclick="showRejectionReason(this.dataset.name, this.dataset.reason)">
+                                                        Reason
+                                                    </button>
+                                                    <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_<?= $cat['id'] ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="action" value="delete_fee_category">
+                                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                                        <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                                                            onclick="confirmDeleteCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>')">Delete</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px;" onclick="openEditCategoryModal(<?= htmlspecialchars(json_encode($cat), ENT_QUOTES) ?>)">Edit</button>
+                                                    <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_<?= $cat['id'] ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="action" value="delete_fee_category">
+                                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                                        <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                                                            onclick="confirmDeleteCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>')">Delete</button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -1216,7 +1341,7 @@ $accountingName = Auth::username() ?? 'accounting';
                                        value="<?= number_format($cat['default_amount'], 2, '.', '') ?>" 
                                        inputmode="decimal"
                                        required
-                                       <?= empty($cat['is_variable']) ? 'readonly aria-readonly="true"' : '' ?>
+                                       
                                        <?= !empty($cat['is_variable']) ? 'placeholder="Calculated from assessment total"' : '' ?>
                                        aria-label="<?= e($cat['name']) ?> amount, maximum two decimal places"
                                        oninput="recalcAssessmentTotal()">
@@ -1334,8 +1459,9 @@ $accountingName = Auth::username() ?? 'accounting';
 <div class="modal-backdrop" id="categoryModal">
     <div class="modal-window" style="max-width: 440px;">
         <button class="modal-close-x" onclick="document.getElementById('categoryModal').classList.remove('active')">&times;</button>
-        <h2 class="modal-header-title" id="catModalTitle">Add Fee Category</h2>
-        <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories">
+        <h2 class="modal-header-title" id="catModalTitle" style="margin-bottom: 2px;">Request New Fee Category</h2>
+        <p class="modal-header-sub" id="catModalSub" style="color: #64748b; font-size: 12px; margin: 0 0 16px;">Submit a new fee aspect for Administrator review and approval.</p>
+        <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" id="categoryForm">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="save_fee_category">
             <input type="hidden" name="category_id" id="catModalId" value="0">
@@ -1364,13 +1490,148 @@ $accountingName = Auth::username() ?? 'accounting';
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" class="btn" onclick="document.getElementById('categoryModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn" style="background: #0b3d2e; color: #fff;">Save Category</button>
+                <button type="submit" class="btn" id="btnSubmitCategory" style="background: #0b3d2e; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <span id="btnSubmitCategoryText">Request to Admin</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- ==================================================== -->
+<!-- ==================================================== -->
+<!-- MODAL: OFFICIAL STUDENT TUITION ASSESSMENT RECEIPT   -->
+<!-- ==================================================== -->
+<div class="modal-backdrop" id="assessmentReceiptModal">
+    <div class="modal-window" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+        <button class="modal-close-x" onclick="document.getElementById('assessmentReceiptModal').classList.remove('active')">&times;</button>
+        
+        <div id="assessmentReceiptPrintArea" style="padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+            <!-- Header Letterhead -->
+            <div style="text-align: center; border-bottom: 2px solid #0b3d2e; padding-bottom: 14px; margin-bottom: 20px;">
+                <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #047857; text-transform: uppercase;">Accounting Office — Student Financial Services</div>
+                <h2 style="margin: 4px 0 2px; color: #0b3d2e; font-size: 20px; font-weight: 800;">NATIONAL COLLEGE OF SCIENCE AND TECHNOLOGY</h2>
+                <div style="font-size: 13px; font-weight: 600; color: #334155;">Official Student Tuition Assessment Statement &amp; Receipt</div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 10px; padding: 0 4px;">
+                    <span>Ref No: <strong id="arNumber" style="color: #0b3d2e;">#TF-0000</strong></span>
+                    <span>Date Generated: <span id="arDate"><?= date('M d, Y') ?></span></span>
+                </div>
+            </div>
+
+            <!-- Student Info Card -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
+                <div>
+                    <span style="color: #64748b;">Student Name:</span><br>
+                    <strong id="arStudentName" style="font-size: 14px; color: #0f172a;">—</strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">Student ID / Number:</span><br>
+                    <strong id="arStudentNum" style="font-size: 14px; color: #0b3d2e;">—</strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">Course / Program &amp; Year:</span><br>
+                    <span id="arGradeLevel" style="font-weight: 600;">—</span>
+                </div>
+                <div>
+                    <span style="color: #64748b;">School Year &amp; Semester:</span><br>
+                    <span id="arTerm" style="font-weight: 600;">—</span>
+                </div>
+                <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 2px;">
+                    <span style="color: #64748b;">Assessment Description:</span>
+                    <strong id="arDescription" style="color: #1e293b;">—</strong>
+                </div>
+            </div>
+
+            <!-- Fee Breakdown Table -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 700; color: #0b3d2e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Itemized Fee Assessment Breakdown</div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+                    <thead>
+                        <tr style="background: #f1f5f9; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                            <th style="text-align: left; padding: 8px 10px; color: #475569;">Fee Aspect / Particulars</th>
+                            <th style="text-align: right; padding: 8px 10px; color: #475569;">Assessed Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="arItemsBody">
+                        <tr><td colspan="2" style="padding: 10px; text-align: center; color: #94a3b8;">No fee items recorded.</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top: 2px solid #0b3d2e; font-weight: 800; font-size: 13px;">
+                            <td style="padding: 10px; text-align: right; color: #0b3d2e;">TOTAL TUITION ASSESSMENT:</td>
+                            <td style="padding: 10px; text-align: right; color: #0b3d2e;" id="arTotalAssessed">₱0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Payment Transactions / Official Receipts -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 700; color: #059669; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Official Payment Transactions &amp; Receipts</div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #f0fdf4; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0;">
+                            <th style="text-align: left; padding: 6px 10px; color: #166534;">OR #</th>
+                            <th style="text-align: left; padding: 6px 10px; color: #166534;">Date &amp; Time</th>
+                            <th style="text-align: left; padding: 6px 10px; color: #166534;">Method</th>
+                            <th style="text-align: right; padding: 6px 10px; color: #166534;">Amount Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody id="arPaymentsBody">
+                        <tr><td colspan="4" style="padding: 8px 10px; text-align: center; color: #94a3b8;">No payments logged yet for this assessment.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Financial Summary Box -->
+            <div style="background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #065f46;">Total Assessed</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0b3d2e; margin-top: 2px;" id="arSumAssessed">₱0.00</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #065f46;">Total Paid</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #059669; margin-top: 2px;" id="arSumPaid">₱0.00</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #065f46;">Balance Due</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #dc2626; margin-top: 2px;" id="arSumRemaining">₱0.00</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #6ee7b7; font-size: 12px;">
+                    <span>Account Status: </span><strong id="arStatusBadge" style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px;">UNPAID</strong>
+                </div>
+            </div>
+
+            <!-- Official Certification & Signatures -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 26px; padding-top: 16px; border-top: 1px solid #cbd5e1; font-size: 11.5px; color: #64748b;">
+                <div>
+                    <div>PayTrack Certified Electronic Assessment &amp; Receipt</div>
+                    <div>National College of Science and Technology</div>
+                </div>
+                <div style="text-align: center; width: 170px;">
+                    <div style="border-bottom: 1px solid #334155; margin-bottom: 4px; height: 26px;"></div>
+                    <strong style="color: #0f172a;">Accounting Officer</strong><br>
+                    <span>Authorized Signature</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Actions Footer -->
+        <div class="modal-actions-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; border-radius: 0 0 16px 16px;">
+            <button type="button" class="btn" onclick="document.getElementById('assessmentReceiptModal').classList.remove('active')">Close</button>
+            <button type="button" class="btn" style="background: #0b3d2e; color: #fff; display: inline-flex; align-items: center; gap: 6px;" onclick="window.print()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print Official Receipt / Statement
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL: PRINTABLE OFFICIAL RECEIPT                    -->
 <!-- ==================================================== -->
 <div class="modal-backdrop" id="receiptModal">
@@ -1503,16 +1764,19 @@ $accountingName = Auth::username() ?? 'accounting';
     };
 
     // ── SweetAlert: Delete Fee Category ──
-    window.confirmDeleteCategory = function(catId, name) {
+    window.confirmDeleteCategory = function(catId, name, actionType = 'delete') {
+        const isCancel = actionType === 'cancel';
         Swal.fire({
-            title: 'Delete Fee Category?',
-            html: `Are you sure you want to delete the category:<br><br><strong>${name}</strong><br><br><span style="color:#ef4444;font-size:12px;">⚠ This will fail if existing assessments still use this category.</span>`,
+            title: isCancel ? 'Cancel Approval Request?' : 'Delete Fee Category?',
+            html: isCancel 
+                ? `Cancel pending request for <strong>${name}</strong>? Admin review will be withdrawn.`
+                : `Are you sure you want to delete the category:<br><br><strong>${name}</strong><br><br><span style="color:#ef4444;font-size:12px;">⚠ This will fail if existing assessments still use this category.</span>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#64748b',
-            confirmButtonText: 'Yes, Delete Category',
-            cancelButtonText: 'Cancel'
+            confirmButtonText: isCancel ? 'Yes, Cancel Request' : 'Yes, Delete Category',
+            cancelButtonText: 'Back'
         }).then((result) => {
             if (result.isConfirmed) {
                 document.getElementById('deleteCatForm_' + catId)?.submit();
@@ -1553,26 +1817,12 @@ $accountingName = Auth::username() ?? 'accounting';
                 const item = existingItems.find(existing => Number(existing.fee_category_id) === categoryId)
                     || existingItems.find(existing => !existing.fee_category_id && existing.category_name === categoryName);
                 checkbox.checked = Boolean(item);
-                amount.value = amount.dataset.variable === '1'
-                    ? (item ? Number(item.amount).toFixed(2) : '0.00')
-                    : Number(amount.dataset.defaultAmount).toFixed(2);
+                // Load existing assessed item amount directly so adjustments made by accounting reflect accurately
+                amount.value = item ? Number(item.amount).toFixed(2) : Number(amount.dataset.defaultAmount).toFixed(2);
                 amount.disabled = !item;
                 row.classList.toggle('excluded', !item);
                 validateAssessmentAmount(amount);
             });
-
-            // Keep the existing assessment total authoritative. The variable
-            // tuition category receives any remainder after fixed fee items.
-            const variableInput = document.querySelector('.fee-category-row input[data-variable="1"]');
-            if (variableInput && variableInput.closest('.fee-category-row').querySelector('input[type="checkbox"]').checked) {
-                const fixedTotal = Array.from(document.querySelectorAll('.fee-category-row input[type="checkbox"]:checked'))
-                    .reduce((sum, checkbox) => {
-                        const amount = checkbox.closest('.fee-category-row').querySelector('input[type="number"]');
-                        return amount === variableInput ? sum : sum + (Number(amount.value) || 0);
-                    }, 0);
-                variableInput.value = Math.max(0, Number(currentFee.total_amount) - fixedTotal).toFixed(2);
-                validateAssessmentAmount(variableInput);
-            }
         } else {
             document.getElementById('assignDueDate').value = '<?= date('Y-m-d', strtotime('+30 days')) ?>';
             document.querySelectorAll('.fee-category-row').forEach(row => {
@@ -1665,25 +1915,175 @@ $accountingName = Auth::username() ?? 'accounting';
         document.getElementById('manualPaymentModal')?.classList.remove('active');
     });
 
+    // ── HTML Escape Helper ──
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    window.escapeHtml = escapeHtml;
+
     // ── Category Modal ──
     window.openAddCategoryModal = function() {
-        document.getElementById('catModalTitle').textContent = 'Add Fee Category';
+        document.getElementById('catModalTitle').textContent = 'Request New Fee Category';
+        const sub = document.getElementById('catModalSub');
+        if (sub) sub.textContent = 'Submit a new fee aspect for Administrator review and approval.';
         document.getElementById('catModalId').value = '0';
         document.getElementById('catModalName').value = '';
         document.getElementById('catModalAmount').value = '';
         document.getElementById('catModalVariable').checked = false;
         document.getElementById('catModalSort').value = '10';
+        const btn = document.getElementById('btnSubmitCategory');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span id="btnSubmitCategoryText">Request to Admin</span>';
+        }
         document.getElementById('categoryModal')?.classList.add('active');
     };
 
     window.openEditCategoryModal = function(cat) {
         document.getElementById('catModalTitle').textContent = 'Edit Fee Category';
+        const sub = document.getElementById('catModalSub');
+        if (sub) sub.textContent = 'Update standard fee category details.';
         document.getElementById('catModalId').value = cat.id;
         document.getElementById('catModalName').value = cat.name;
         document.getElementById('catModalAmount').value = cat.default_amount;
         document.getElementById('catModalVariable').checked = cat.is_variable == 1;
         document.getElementById('catModalSort').value = cat.sort_order;
+        const btn = document.getElementById('btnSubmitCategory');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span id="btnSubmitCategoryText">Save Changes</span>';
+        }
         document.getElementById('categoryModal')?.classList.add('active');
+    };
+
+    // Category form submission with loading overlay to prevent spamming
+    const categoryForm = document.getElementById('categoryForm');
+    const btnSubmitCategory = document.getElementById('btnSubmitCategory');
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', function(e) {
+            const nameVal = document.getElementById('catModalName')?.value.trim();
+            if (!nameVal) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'Category Name Required', text: 'Please enter a name for the fee category.' });
+                return;
+            }
+            if (btnSubmitCategory && btnSubmitCategory.disabled) {
+                e.preventDefault();
+                return;
+            }
+            if (btnSubmitCategory) {
+                btnSubmitCategory.disabled = true;
+                btnSubmitCategory.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span> Sending...';
+            }
+            const isNew = document.getElementById('catModalId').value == '0';
+            if (accountingLoadingTitle) accountingLoadingTitle.textContent = isNew ? 'Submitting Request to Admin...' : 'Saving Fee Category...';
+            if (accountingLoadingDesc) accountingLoadingDesc.textContent = isNew ? 'Sending request notification to Administrator for approval. Please wait...' : 'Updating fee category records. Please wait...';
+            if (accountingLoadingOverlay) {
+                accountingLoadingOverlay.classList.add('active');
+                accountingLoadingOverlay.style.display = 'flex';
+            }
+        });
+    }
+
+        // ── Official Assessment Receipt View Modal ──
+    window.viewAssessmentReceipt = function(fee) {
+        if (!fee) return;
+        document.getElementById('arNumber').textContent = '#TF-' + fee.id;
+        document.getElementById('arDate').textContent = fee.created_at ? new Date(fee.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '<?= date("M d, Y") ?>';
+        document.getElementById('arStudentName').textContent = (fee.first_name || '') + ' ' + (fee.last_name || '');
+        document.getElementById('arStudentNum').textContent = fee.student_num || '—';
+        document.getElementById('arGradeLevel').textContent = fee.grade_level || 'BSCS 11A1';
+        document.getElementById('arTerm').textContent = (fee.school_year || 'S.Y.') + ' (' + (fee.semester || '1st Semester') + ')';
+        document.getElementById('arDescription').textContent = fee.description || 'Tuition Assessment';
+
+        const totalAmount = parseFloat(fee.total_amount || 0);
+        const amountPaid = parseFloat(fee.amount_paid || 0);
+        const remaining = Math.max(0, totalAmount - amountPaid);
+
+        document.getElementById('arTotalAssessed').textContent = '₱' + totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('arSumAssessed').textContent = '₱' + totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('arSumPaid').textContent = '₱' + amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('arSumRemaining').textContent = '₱' + remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const badge = document.getElementById('arStatusBadge');
+        if (remaining <= 0 && totalAmount > 0) {
+            badge.textContent = 'FULLY PAID';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#166534';
+        } else if (amountPaid > 0) {
+            badge.textContent = 'PARTIAL PAYMENT';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#92400e';
+        } else {
+            badge.textContent = 'UNPAID';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#991b1b';
+        }
+
+        // Render item breakdown
+        const itemsBody = document.getElementById('arItemsBody');
+        const items = Array.isArray(fee.items) ? fee.items : [];
+        if (items.length > 0) {
+            itemsBody.innerHTML = items.map(item => `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 7px 10px; color: #1e293b;">${escapeHtml(item.category_name || item.name || 'Tuition Aspect')}</td>
+                    <td style="padding: 7px 10px; text-align: right; font-weight: 600; color: #0f172a;">₱${parseFloat(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `).join('');
+        } else {
+            itemsBody.innerHTML = `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 7px 10px; color: #1e293b;">Tuition Assessment Fee</td>
+                    <td style="padding: 7px 10px; text-align: right; font-weight: 600; color: #0f172a;">₱${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `;
+        }
+
+        // Render payment transactions
+        const paymentsBody = document.getElementById('arPaymentsBody');
+        const payments = Array.isArray(fee.payments) ? fee.payments : [];
+        if (payments.length > 0) {
+            paymentsBody.innerHTML = payments.map(p => `
+                <tr style="border-bottom: 1px solid #f0fdf4;">
+                    <td style="padding: 6px 10px; font-weight: 700; color: #0b3d2e;">${escapeHtml(p.or_number || 'OR-N/A')}</td>
+                    <td style="padding: 6px 10px; color: #475569;">${p.paid_at ? new Date(p.paid_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : (p.created_at || '—')}</td>
+                    <td style="padding: 6px 10px; text-transform: uppercase; font-weight: 600;">${escapeHtml(p.payment_method || 'CASH')}</td>
+                    <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #059669;">₱${parseFloat(p.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `).join('');
+        } else {
+            paymentsBody.innerHTML = `
+                <tr><td colspan="4" style="padding: 10px; text-align: center; color: #94a3b8; font-style: italic;">No official receipts recorded for this assessment.</td></tr>
+            `;
+        }
+
+        document.getElementById('assessmentReceiptModal')?.classList.add('active');
+    };
+
+    window.showRejectionReason = function(name, reason) {
+        const cleanName = escapeHtml(name || 'Fee Category');
+        const cleanReason = escapeHtml(reason || 'No specific reason provided by administrator.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Fee Category Rejected',
+            html: `
+                <div style="text-align: left; font-size: 13.5px; color: #334155;">
+                    <p style="margin-bottom: 12px;">The request for <strong>${cleanName}</strong> was rejected by the System Administrator.</p>
+                    <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 14px; margin-top: 10px;">
+                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #991b1b; letter-spacing: 0.5px; margin-bottom: 4px;">Rejection Reason:</div>
+                        <div style="color: #7f1d1d; font-size: 13px; line-height: 1.5; font-weight: 500;">${cleanReason}</div>
+                    </div>
+                </div>
+            `,
+            confirmButtonColor: '#0b3d2e',
+            confirmButtonText: 'Close'
+        });
     };
 
     // ── Receipt Voucher Modal ──
@@ -1843,98 +2243,200 @@ $accountingName = Auth::username() ?? 'accounting';
         });
     }
 
-    // ── Real-time polling (every 15 s) ──
-    // Ignore payments already present when this page was rendered. Only payments
-    // arriving after this snapshot should trigger a live notification.
+        // ── Real-time polling via AJAX (every 2.5 seconds) ──
     let lastPaymentId = <?= !empty($payments) ? (int) max(array_map(static fn($payment) => (int)($payment['id'] ?? 0), $payments)) : 0 ?>;
-    async function pollRealtimeFeed() {
-        try {
-            const resp = await fetch(`<?= APP_URL ?>/public/accounting/?action=realtime_feed&last_payment_id=${lastPaymentId}`);
-            if (!resp.ok) return;
-            const data = await resp.json();
+    let lastKnownCategoriesHash = null;
 
-            // Update KPI cards
-            if (data.metrics) {
-                const rev = document.getElementById('kpiTotalRevenue');
-                const rec = document.getElementById('kpiTotalReceivables');
-                const col = document.getElementById('kpiCollectionRate');
-                if (rev && data.metrics.formatted_revenue)     rev.textContent = data.metrics.formatted_revenue;
-                if (rec && data.metrics.formatted_receivables) rec.textContent = data.metrics.formatted_receivables;
-                if (col && data.metrics.formatted_collection_rate) col.textContent = data.metrics.formatted_collection_rate;
-            }
+    // Real-time table row updater for Fee Categories
+    function renderCategoryRowHtml(cat) {
+        const approval = cat.approval_status || 'approved';
+        let badgeHtml = '';
+        let actionHtml = '';
 
-            // Update per-student balance cells
-            if (data.students && Array.isArray(data.students)) {
-                data.students.forEach(s => {
-                    const cell = document.querySelector(`tr[data-student-id="${s.id}"] .student-balance-cell`);
-                    if (cell && s.formatted_balance) cell.textContent = s.formatted_balance;
-                });
-            }
-
-            // Show toast for new payments
-            if (data.new_payments && data.new_payments.length > 0) {
-                data.new_payments.forEach(p => {
-                    lastPaymentId = Math.max(lastPaymentId, p.id);
-                    // Show a small non-blocking toast using SweetAlert2 mixin
-                    Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 5000,
-                        timerProgressBar: true,
-                    }).fire({
-                        icon: 'success',
-                        title: `New payment: ₱${parseFloat(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} from ${p.first_name} ${p.last_name}`
-                    });
-                });
-
-                // Mark the notification bell and its menu as having new activity.
-                const notifButton = document.getElementById('btnAccNotif');
-                if (notifButton && !notifButton.querySelector('.notif-dot-red')) {
-                    const dot = document.createElement('span');
-                    dot.className = 'notif-dot-red';
-                    notifButton.appendChild(dot);
-                }
-                const notifBadge = document.querySelector('#accNotifDropdown .notif-header-badge');
-                if (notifBadge) {
-                    const currentUnread = parseInt(notifBadge.textContent, 10) || 0;
-                    notifBadge.textContent = `${currentUnread + data.new_payments.length} new`;
-                }
-            }
-
-            // Update each tuition assessment row, including amount paid, balance,
-            // and status. This is the view where accounting tracks posted tuition.
-            if (data.assessments) {
-                Object.entries(data.assessments).forEach(([feeId, assessment]) => {
-                    const row = document.querySelector(`tr[data-fee-id="${feeId}"]`);
-                    if (!row) return;
-                    const total = row.querySelector('.assessment-total');
-                    const paid = row.querySelector('.assessment-paid');
-                    const remaining = row.querySelector('.assessment-remaining');
-                    const status = row.querySelector('.assessment-status');
-                    if (total) total.textContent = assessment.formatted_total;
-                    if (paid) paid.textContent = assessment.formatted_paid;
-                    if (remaining) {
-                        remaining.textContent = assessment.formatted_remaining;
-                        remaining.style.color = assessment.remaining_balance > 0 ? '#b45309' : '#166534';
-                    }
-                    if (status) {
-                        const badge = status.querySelector('.badge');
-                        if (badge) {
-                            badge.className = `badge ${assessment.status === 'paid' ? 'success' : assessment.status === 'partial' ? 'warning' : 'danger'}`;
-                            badge.textContent = assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1);
-                        }
-                    }
-                });
-            }
-        } catch (err) {
-            // Silently ignore network errors (offline, XAMPP stopped, etc.)
+        if (approval === 'pending') {
+            badgeHtml = `<span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
+                Pending Admin Approval
+            </span>`;
+            actionHtml = `
+                <button type="button" class="btn disabled" style="padding: 4px 8px; font-size: 11.5px; opacity: 0.65; cursor: not-allowed; background: #f1f5f9; color: #64748b;" disabled title="Awaiting Admin Review">
+                    ⏳ Under Review
+                </button>
+                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_${cat.id}">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="delete_fee_category">
+                    <input type="hidden" name="category_id" value="${cat.id}">
+                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                        onclick="confirmDeleteCategory(${cat.id}, '${escapeHtml(cat.name)}', 'cancel')">Cancel Request</button>
+                </form>
+            `;
+        } else if (approval === 'rejected') {
+            badgeHtml = `<span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 600; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                data-name="${escapeHtml(cat.name)}"
+                data-reason="${escapeHtml(cat.rejection_reason || '')}"
+                onclick="showRejectionReason(this.dataset.name, this.dataset.reason)"
+                title="Click to view rejection reason">
+                ✕ Rejected
+            </span>`;
+            actionHtml = `
+                <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #991b1b; border-color: #fecaca; background: #fff1f2; font-weight: 600;"
+                    data-name="${escapeHtml(cat.name)}"
+                    data-reason="${escapeHtml(cat.rejection_reason || '')}"
+                    onclick="showRejectionReason(this.dataset.name, this.dataset.reason)">
+                    Reason
+                </button>
+                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_${cat.id}">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="delete_fee_category">
+                    <input type="hidden" name="category_id" value="${cat.id}">
+                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                        onclick="confirmDeleteCategory(${cat.id}, '${escapeHtml(cat.name)}')">Delete</button>
+                </form>
+            `;
+        } else {
+            badgeHtml = `<span class="badge" style="background: #dcfce7; color: #166534; font-weight: 600; padding: 4px 8px; border-radius: 4px;">
+                ✓ Approved &amp; Active
+            </span>`;
+            actionHtml = `
+                <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px;" onclick='openEditCategoryModal(${JSON.stringify(cat)})'>Edit</button>
+                <form method="POST" action="<?= APP_URL ?>/public/accounting/?view=categories" style="display: inline;" id="deleteCatForm_${cat.id}">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="delete_fee_category">
+                    <input type="hidden" name="category_id" value="${cat.id}">
+                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 11.5px; color: #ef4444; border-color: #fee2e2; background: #fff5f5;"
+                        onclick="confirmDeleteCategory(${cat.id}, '${escapeHtml(cat.name)}')">Delete</button>
+                </form>
+            `;
         }
+
+        const typeBadge = cat.is_variable == 1
+            ? '<span class="badge info">Variable Remainder</span>'
+            : '<span class="badge success">Fixed Aspect</span>';
+
+        return `
+            <tr data-cat-id="${cat.id}">
+                <td><code>${escapeHtml(cat.code)}</code></td>
+                <td><strong>${escapeHtml(cat.name)}</strong></td>
+                <td><strong style="color: #0b3d2e;">${cat.formatted_amount || ('₱' + parseFloat(cat.default_amount).toLocaleString('en-US', { minimumFractionDigits: 2 }))}</strong></td>
+                <td>${typeBadge}</td>
+                <td>${badgeHtml}</td>
+                <td style="text-align: right;">${actionHtml}</td>
+            </tr>
+        `;
     }
 
-    // Start polling after 15 s so initial load doesn't get double-hit
-    setInterval(pollRealtimeFeed, 15000);
+    function pollRealtimeAjax() {
+        $.ajax({
+            url: '<?= APP_URL ?>/public/accounting/?action=realtime_feed&last_payment_id=' + lastPaymentId + '&_t=' + Date.now(),
+            type: 'GET',
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                if (!data || !data.success) return;
 
+                // 1. Live Categories Sync (when Admin approves or rejects)
+                if (data.categories_hash) {
+                    if (lastKnownCategoriesHash !== null && lastKnownCategoriesHash !== data.categories_hash) {
+                        const tbody = document.getElementById('categoryTableBody');
+                        if (tbody && Array.isArray(data.categories)) {
+                            tbody.innerHTML = data.categories.map(renderCategoryRowHtml).join('');
+                            if (window.Swal) {
+                                Swal.mixin({
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 4500,
+                                    timerProgressBar: true
+                                }).fire({
+                                    icon: 'info',
+                                    title: 'Fee Category updated in real-time!'
+                                });
+                            }
+                        }
+                    }
+                    lastKnownCategoriesHash = data.categories_hash;
+                }
+
+                // 2. Live Notifications Count & Badge
+                const notifButton = document.getElementById('btnAccNotif');
+                if (data.pending_fee_count > 0 || (data.new_payments && data.new_payments.length > 0)) {
+                    if (notifButton && !notifButton.querySelector('.notif-dot-red')) {
+                        const dot = document.createElement('span');
+                        dot.className = 'notif-dot-red';
+                        notifButton.appendChild(dot);
+                    }
+                }
+
+                // 3. Live Payment Toasts
+                if (data.new_payments && data.new_payments.length > 0) {
+                    data.new_payments.forEach(p => {
+                        lastPaymentId = Math.max(lastPaymentId, p.id);
+                        if (window.Swal) {
+                            Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 5000,
+                                timerProgressBar: true
+                            }).fire({
+                                icon: 'success',
+                                title: `New payment: ₱${parseFloat(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} from ${p.first_name} ${p.last_name}`
+                            });
+                        }
+                    });
+                }
+
+                // 4. Update KPI & Assessment Rows
+                if (data.metrics) {
+                    const rev = document.getElementById('kpiTotalRevenue');
+                    const rec = document.getElementById('kpiTotalReceivables');
+                    const col = document.getElementById('kpiCollectionRate');
+                    if (rev && data.metrics.formatted_revenue) rev.textContent = data.metrics.formatted_revenue;
+                    if (rec && data.metrics.formatted_receivables) rec.textContent = data.metrics.formatted_receivables;
+                    if (col && data.metrics.formatted_collection_rate) col.textContent = data.metrics.formatted_collection_rate;
+                }
+
+                if (data.students && Array.isArray(data.students)) {
+                    data.students.forEach(s => {
+                        const cell = document.querySelector(`tr[data-student-id="${s.id}"] .student-balance-cell`);
+                        if (cell && s.formatted_balance) cell.textContent = s.formatted_balance;
+                    });
+                }
+
+                if (data.assessments) {
+                    Object.entries(data.assessments).forEach(([feeId, assessment]) => {
+                        const row = document.querySelector(`tr[data-fee-id="${feeId}"]`);
+                        if (!row) return;
+                        const total = row.querySelector('.assessment-total');
+                        const paid = row.querySelector('.assessment-paid');
+                        const remaining = row.querySelector('.assessment-remaining');
+                        const status = row.querySelector('.assessment-status');
+                        if (total) total.textContent = assessment.formatted_total;
+                        if (paid) paid.textContent = assessment.formatted_paid;
+                        if (remaining) {
+                            remaining.textContent = assessment.formatted_remaining;
+                            remaining.style.color = assessment.remaining_balance > 0 ? '#b45309' : '#166534';
+                        }
+                        if (status) {
+                            const badge = status.querySelector('.badge');
+                            if (badge) {
+                                badge.className = `badge ${assessment.status === 'paid' ? 'success' : assessment.status === 'partial' ? 'warning' : 'danger'}`;
+                                badge.textContent = assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // Start AJAX polling every 2.5 seconds
+    setInterval(pollRealtimeAjax, 2500);
+    window.addEventListener('focus', pollRealtimeAjax);
 </script>
+
+<!-- Bootstrap 5.3 JS (CDN with Subresource Integrity & Local Fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="<?= APP_URL ?>/assets/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>
